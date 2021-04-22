@@ -1,0 +1,71 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  jackson:
+    default-property-inclusion: non_null
+
+  kafka:
+    producer:
+      properties:
+        max:
+          in:
+            flight:
+              requests:
+                per:
+                  connection: 1
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      group-id: ksqldb-event-sourcing-app
+    listener:
+      ack-mode: BATCH
+
+ksqldb:
+  init-sql:
+    - |-
+      CREATE STREAM ORDER_COMMANDS_AND_EVENTS (
+          ORDER_ID STRING KEY,
+          TYPE STRING,
+          SUB_TYPE STRING,
+          DETAILS STRING
+      ) WITH (
+          KAFKA_TOPIC='order-commands-and-events',
+          PARTITIONS=10,
+          VALUE_FORMAT='JSON'
+      );
+
+    - |-
+      CREATE TABLE ORDER_AGGREGATES WITH (
+          KAFKA_TOPIC='order-aggregates',
+          PARTITIONS=10,
+          VALUE_FORMAT='JSON'
+      ) AS SELECT
+          ORDER_ID,
+          LATEST_BY_OFFSET(TYPE) as LATEST_TYPE,
+          LATEST_BY_OFFSET(SUB_TYPE) as LATEST_SUB_TYPE,
+          LATEST_BY_OFFSET(DETAILS) as LATEST_DETAILS,
+          COLLECT_LIST(TYPE) AS TYPE_LIST,
+          COLLECT_LIST(SUB_TYPE) AS SUB_TYPE_LIST,
+          COLLECT_LIST(DETAILS) AS DETAILS_LIST
+      FROM ORDER_COMMANDS_AND_EVENTS
+      GROUP BY ORDER_ID
+      EMIT CHANGES;
+
+    - |-
+      CREATE STREAM ORDER_INTEGRATION_EVENTS (
+          ORDER_ID STRING KEY,
+          VERSION INT,
+          EVENT_TYPE STRING,
+          EVENT_TIMESTAMP BIGINT,
+          STATUS STRING,
+          RIDER_ID STRING,
+          PRICE STRING,
+          ROUTE ARRAY<STRUCT<ADDRESS STRING, LAT DOUBLE, LON DOUBLE>>,
+          DRIVER_ID STRING
+      ) WITH (
+          KAFKA_TOPIC='order-integration-events',
+          PARTITIONS=10,
+          VALUE_FORMAT='JSON'
+      );

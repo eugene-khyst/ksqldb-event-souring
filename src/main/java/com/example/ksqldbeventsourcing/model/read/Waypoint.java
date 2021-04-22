@@ -1,0 +1,19 @@
+package com.example.ksqldbeventsourcing.model.read;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
+import javax.persistence.Embeddable;
+import lombok.Data;
+
+@Embeddable
+@Data
+public class Waypoint implements Serializable {
+
+  private String address;
+
+  @JsonProperty("lat")
+  private double latitude;
+
+  @JsonProperty("lon")
+  private double longitude;
+}

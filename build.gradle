@@ -1,0 +1,57 @@
+plugins {
+    id 'org.springframework.boot' version "${spring_boot_version}"
+    id 'io.spring.dependency-management' version "${spring_dependency_management_version}"
+    id 'com.google.cloud.tools.jib' version "${jib_version}"
+    id 'java'
+}
+
+group = 'com.example'
+sourceCompatibility = '11'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://ksqldb-maven.s3.amazonaws.com/maven/'
+    }
+    maven {
+        url 'https://jenkins-confluent-packages-beta-maven.s3.amazonaws.com/6.2.0-beta201122193350-cp5/3/maven/'
+    }
+}
+
+jib {
+    to {
+        image = "example.com/${project.name}:${project.version}"
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.kafka:spring-kafka'
+
+    implementation "org.postgresql:postgresql:${postgresql_version}"
+    implementation "org.mapstruct:mapstruct:${mapstruct_version}"
+    implementation("io.confluent.ksql:ksqldb-api-client:${ksqldb_version}") {
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+
+    compileOnly 'org.projectlombok:lombok'
+
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombok_mapstruct_binding_version}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstruct_version}"
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+test {
+    useJUnitPlatform()
+}
