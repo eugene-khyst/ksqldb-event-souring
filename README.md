@@ -60,9 +60,19 @@ A command generates zero or more events or results in an error.
 
 ### <a name="942a78423f55c5226a507463acf7be49"></a>ksqlDB Streams vs Tables
 
-![ksqlDB streams and tables duality](img/es-cqrs-ksqlDB-1.png)
+A stream is a partitioned, immutable, append-only collection that represents a series of historical facts.
+
+A table is a mutable, partitioned collection that models change over time and represents what is true as of "now".
 
 ![ksqlDB stream vs table example](img/es-cqrs-ksqlDB-2.png)
+
+Both steams and tables are backed by a Kafka topic.
+
+The current state of a table is stored locally and ephemerally on a specific server by
+using [RocksDB](https://rocksdb.org/). The series of changes that are applied to a table is stored
+durably in a Kafka topic.
+
+![ksqlDB streams and tables duality](img/es-cqrs-ksqlDB-1.png)
 
 ### <a name="41e46dfc4197bfe5135c9953cd4eb8b7"></a>ksqlDb Event Store
 
