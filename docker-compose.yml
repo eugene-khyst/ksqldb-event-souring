@@ -44,33 +44,23 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:9092'
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:0.11.0
+    image: confluentinc/ksqldb-server:0.15.0
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
       - kafka
       - schema-registry
-    ports:
-      - "8088:8088"
     environment:
       KSQL_CONFIG_DIR: "/etc/ksqldb"
       KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksqldb/log4j.properties"
       KSQL_BOOTSTRAP_SERVERS: "kafka:9092"
       KSQL_HOST_NAME: ksqldb-server
-      KSQL_LISTENERS: "http://0.0.0.0:8088"
       KSQL_CACHE_MAX_BYTES_BUFFERING: 0
       KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-
-  ksqldb-cli:
-    image: confluentinc/ksqldb-cli:0.11.0
-    container_name: ksqldb-cli
-    depends_on:
-      - kafka
-      - ksqldb-server
-    entrypoint: /bin/sh
-    environment:
-      KSQL_CONFIG_DIR: "/etc/ksqldb"
-    tty: true
+      KSQL_KSQL_QUERIES_FILE: "/opt/app/queries.sql"
+    volumes:
+      - ./queries.sql:/opt/app/queries.sql
+    restart: unless-stopped
 
   postgres:
     image: postgres:13
@@ -96,5 +86,5 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: s3cr3t
       SPRING_KAFKA_BOOTSTRAPSERVERS: "kafka:9092"
-      KSQLDB_SERVERURL: "http://ksqldb-server:8088"
+      LOGGING_LEVEL_COM_EXAMPLE_KSQLDBEVENTSOURCING: DEBUG
     restart: unless-stopped

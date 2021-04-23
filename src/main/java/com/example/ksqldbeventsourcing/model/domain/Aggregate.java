@@ -3,8 +3,6 @@ package com.example.ksqldbeventsourcing.model.domain;
 import com.example.ksqldbeventsourcing.model.command.Command;
 import com.example.ksqldbeventsourcing.model.event.ErrorEvent;
 import com.example.ksqldbeventsourcing.model.event.Event;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -20,14 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class Aggregate {
 
   protected final UUID aggregateId;
-
-  @JsonProperty("version")
   protected int baseVersion = 0;
-
-  @JsonIgnore protected final List<Event> events;
-  @JsonIgnore protected final List<Event> changes = new ArrayList<>();
-
-  protected final List<String> errors = new ArrayList<>();
+  protected final List<Event> events;
+  protected final List<Event> changes = new ArrayList<>();
+  protected final List<ErrorMessage> errors = new ArrayList<>();
 
   public Aggregate(UUID aggregateId, List<Event> events) {
     Objects.requireNonNull(aggregateId);
@@ -79,13 +73,19 @@ public abstract class Aggregate {
     }
   }
 
-  public void error(String errorMessage) {
-    applyChange(new ErrorEvent(aggregateId, getNextVersion(), errorMessage));
+  public void error(Command command, String errorMessage) {
+    applyChange(
+        new ErrorEvent(
+            aggregateId,
+            getNextVersion(),
+            command.getCommandType(),
+            command.getExpectedVersion(),
+            errorMessage));
   }
 
   public void apply(ErrorEvent event) {
     log.info("Error '{}' in aggregate {}", event.getErrorMessage(), this);
-    errors.add(event.getErrorMessage());
+    errors.add(ErrorMessage.from(event));
   }
 
   protected int getNextVersion() {

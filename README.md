@@ -17,6 +17,15 @@
 * [Why ksqlDB?](#56a081f86b7ec6a7d523c7e6d186f1a3)
 * [How to Run the Sample?](#53af957fc9dc9f7083531a00fe3f364e)
 
+## Introduction
+
+Kafka is not for event sourcing, isn't it?
+
+Kafka alone is not an event store, but Kafka and ksqlDB together allow building full-featured event
+stores.
+
+This repository provides a sample of event sourced system that uses Kafka and ksqlDB as event store.
+
 ## <a name="8753dff3c2879207fa06ef1844b1ea4d"></a>Example Domain
 
 The example domain is ride hailing.
@@ -25,11 +34,55 @@ The example domain is ride hailing.
 * A driver can accept and complete an order.
 * An order can be cancelled before completion.
 
-## <a name="06ad43017847f2d88caea2e87018cd72"></a>Event Sourcing and CQRS
+## <a name="06ad43017847f2d88caea2e87018cd72"></a>Event Sourcing and CQRS 101
 
-TBD
+### State-Oriented Persistence
+
+![State-oriented persistence](img/es-cqrs-state-oriented-persistence.png)
+
+### Event Sourcing
+
+Event sourcing persists the state of an entity as a sequence of immutable state-changing events.
+
+![Event sourcing](img/event-sourcing-1.png)
+
+Whenever the state of an entity changes, a new event is appended to the list of events.
+
+![Event sourcing](img/event-sourcing-2.png)
+
+Current state of an entity can be restored by replaying all its events.
+
+An entity in event sourcing is also referenced as an aggregate.
+
+### CQRS
+
+CQRS (Command-query responsibility segregation) stands for segregating the responsibility between
+commands (write requests) and queries (read requests). The write requests and the read requests are
+processed by different handlers.
 
 A command generates zero or more events or results in an error.
+
+![CQRS](img/cqrs-1.png)
+
+Event sourcing is usually used in conjunction with CQRS.
+
+![CQRS](img/cqrs-2.png)
+
+Events in event sourcing are a part of a bounded context and should not be used "as-is" for
+integration with other bounded contexts. Integration events representing the current state of an
+aggregate should be used for communication between bounded contexts instead of a raw event sourcing
+change events.
+
+### Advantages of Event Sourcing and CQRS
+
+* Having a true history of the system (audit and traceability).
+* Ability to put the system in any prior state (e.g. for debugging).
+* Read-side projections can be created as needed (later) from events. It allows responding to future
+  needs and new requirements.
+* Independent scaling. CQRS allows We can scale the read and write databases independently of each
+  other.
+* Optimized data schema for read database (e.g. the read databases can be denormalized).
+* Simpler queries (e.g. complex `JOIN` operations can be avoided).
 
 ## <a name="70b356f41293ace9df0d04cd8175ac35"></a>Requirements for Event Store
 
@@ -46,7 +99,7 @@ A command generates zero or more events or results in an error.
 
 ### <a name="7a5c6b7581644459b2452045e4b3584d"></a>Kafka Topic Architecture
 
-![Kafka topic architecture](img/es-cqrs-Kafka.png)
+![Kafka topic architecture](img/kafka-topics-architecture.png)
 
 * Topics are partitioned, meaning a topic is spread over a number of "buckets".
 * Kafka preserves the order of messages within a partition. If messages were sent from the producer
@@ -60,11 +113,13 @@ A command generates zero or more events or results in an error.
 
 ### <a name="942a78423f55c5226a507463acf7be49"></a>ksqlDB Streams vs Tables
 
-A stream is a partitioned, immutable, append-only collection that represents a series of historical facts.
+A stream is a partitioned, immutable, append-only collection that represents a series of historical
+facts.
 
-A table is a mutable, partitioned collection that models change over time and represents what is true as of "now".
+A table is a mutable, partitioned collection that models change over time and represents what is
+true as of "now".
 
-![ksqlDB stream vs table example](img/es-cqrs-ksqlDB-2.png)
+![ksqlDB stream vs table example](img/ksqldb-1.png)
 
 Both steams and tables are backed by a Kafka topic.
 
@@ -72,7 +127,7 @@ The current state of a table is stored locally and ephemerally on a specific ser
 using [RocksDB](https://rocksdb.org/). The series of changes that are applied to a table is stored
 durably in a Kafka topic.
 
-![ksqlDB streams and tables duality](img/es-cqrs-ksqlDB-1.png)
+![ksqlDB streams and tables duality](img/ksqldb-2.png)
 
 ### <a name="41e46dfc4197bfe5135c9953cd4eb8b7"></a>ksqlDb Event Store
 
@@ -94,9 +149,7 @@ CREATE STREAM ORDER_EVENTS (
   PARTITIONS=10,
   VALUE_FORMAT='JSON'
 );
-```
 
-```sql
 CREATE TABLE ORDER_AGGREGATES WITH (
   KAFKA_TOPIC='order-aggregates',
   PARTITIONS=10,
@@ -114,55 +167,52 @@ ksqlDB persistent query that does the stream aggregation into a table runs as a 
 
 **There is no guarantee that the command handler will read the latest version of the aggregate.**
 
-![ksqlDB event store not working solution](img/es-cqrs-ksqlDB-Event-Store-Naive.png)
+![ksqlDB event store not working solution](img/ksqldb-naive-event-store.png)
 
 #### <a name="c60b741f731650358e295c4598f5b9fd"></a>Working Solution
 
+![ksqlDB event store high-level](img/ksqldb-event-store-1.png)
+
 1. Commands and events are persistent in the same stream `ORDER_COMMANDS_AND_EVENTS` with `ORDER_ID`
    as a key to preserve ordering.
-2. `ORDER_AGGREGATES` table aggregates events (`LATEST_BY_OFFSET` and `COLLECT_LIST`)
-   by `ORDER_ID` (a key).
+2. `ORDER_AGGREGATES` table aggregates commands and events (`COLLECT_LIST`) by `ORDER_ID` (a key).
 3. Command handler consumes commands from `order-aggregates` topic where changes
-   in `ORDER_AGGREGATES` are published. Thus, processing command B that immediately follows command
-   A, it will be possible to read all previous events generated by command A.
-4. Event handler consumes events form `order-aggregates` topic too.
+   in `ORDER_AGGREGATES` are published. Thus, processing command B that follows command A, it will
+   be possible to read all previous events generated by command A.
+4. Event handler consumes events form `order-aggregates` topic, updates the read database and sends
+   integration events.
 
 ```sql
-CREATE STREAM ORDER_COMMANDS_AND_EVENTS (
+CREATE STREAM IF NOT EXISTS ORDER_COMMANDS_AND_EVENTS (
   ORDER_ID STRING KEY,
+  IS_COMMAND BOOLEAN,
   TYPE STRING,
-  SUB_TYPE STRING,
   DETAILS STRING
 ) WITH (
   KAFKA_TOPIC='order-commands-and-events',
   PARTITIONS=10,
+  REPLICAS=1,
   VALUE_FORMAT='JSON'
 );
-```
 
-```sql
-CREATE TABLE ORDER_AGGREGATES WITH (
+CREATE TABLE IF NOT EXISTS ORDER_AGGREGATES WITH (
   KAFKA_TOPIC='order-aggregates',
   PARTITIONS=10,
+  REPLICAS=1,
   VALUE_FORMAT='JSON'
 ) AS SELECT
   ORDER_ID,
-  LATEST_BY_OFFSET(TYPE) as LATEST_TYPE,
-  LATEST_BY_OFFSET(SUB_TYPE) as LATEST_SUB_TYPE,
-  LATEST_BY_OFFSET(DETAILS) as LATEST_DETAILS,
+  COLLECT_LIST(IS_COMMAND) AS IS_COMMAND_LIST,
   COLLECT_LIST(TYPE) AS TYPE_LIST,
-  COLLECT_LIST(SUB_TYPE) AS SUB_TYPE_LIST,
   COLLECT_LIST(DETAILS) AS DETAILS_LIST
 FROM ORDER_COMMANDS_AND_EVENTS
 GROUP BY ORDER_ID
 EMIT CHANGES;
 ```
 
-![ksqlDB event store high-level](img/es-cqrs-ksqlDB-Event-Store-Working-1.png)
-
 All parts together look like this
 
-![ksqlDB event store](img/es-cqrs-ksqlDB-Event-Store-Working-2.png)
+![ksqlDB event store](img/ksqldb-event-store-2.png)
 
 ##### <a name="205928bf89c3012be2e11d1e5e7ad01f"></a>Permanent Storage
 
@@ -187,42 +237,61 @@ use [Tired Storage](https://www.confluent.io/blog/infinite-kafka-storage-in-conf
 
 ##### <a name="6eec4db0e612f3a70dab7d96c463e8f6"></a>Optimistic concurrency control
 
+**Command must generate one or more events** in order to implement optimistic concurrency control.
+
+Commands and events for the same aggregate are processed sequentially because:
+
 * Messages with the same key goes to the same partition.
 * Kafka preserves the order of messages within a partition.
 * Each partition is processed by one consumer only.
 
-Thus, commands and events for the same aggregate are processed sequentially. It allows implementing
-optimistic concurrency control base on version check.
+Thus, optimistic concurrency control based on version check can be implemented:
+
+1. Actual aggregate version must match the expected version specified in a command.
+2. The last entry from the stream must be a command, and the last but one must be an event. If both
+   entries (the last and the last but one) are commands, it's a concurrent modification.
 
 ```java
-if(order.getBaseVersion()!=command.getOriginalVersion()){
-    //Order base version does not match command expected version
+class OrderCommandHandler {
+
+  // ...
+  private boolean checkVersionMatches(
+      Command latestCommand, List<Command> unprocessedCommands, Order order) {
+    if (order.getBaseVersion() != latestCommand.getExpectedVersion()) {
+      // Actual version doesn't match expected version
+      return false;
     }
+    if (unprocessedCommands.size() > 1) {
+      // Concurrent modification
+      return false;
+    }
+    return true;
+  }
+}
 ```
+
+Also, set a Kafka producer property `max.in.flight.requests.per.connection=1` to make sure that
+while a batch of messages is retrying, additional messages will not be sent.
 
 It is possible that the broker will fail to write the first batch of messages, succeed to write the
 second, and then retry the first batch and succeed, thereby reversing the order.
 
-Set `max.in.flight.requests.per.connection=1` to make sure that while a batch of messages is
-retrying, additional messages will not be sent.
-
 ##### <a name="323effe18de24bcc666f161931c903f3"></a>Loading current state
 
+**There is no need to do a remote call to fetch all events for an aggregate.**
+
 `ORDER_AGGREGATES` table records and messages in its changelog topic `order-aggregates` contain all
-aggregate events (`COLLECT_LIST(DETAILS)`) next to the last event (`LATEST_BY_OFFSET(DETAILS)`).
+aggregate events and commands (`COLLECT_LIST(DETAILS)`).
 
-All aggregate events can be fetched using a ksqlDB pull query also
-
-```sql
-SELECT * FROM ORDER_AGGREGATES WHERE ORDER_ID = :orderId;
-```
+When a command, or an event is consumed from `order-aggregates` topic, the message already contains
+all aggregate events.
 
 ##### <a name="784ff5dca3b046266edf61637822bbff"></a>Subscribe to all events by aggregate type
 
 `ORDER_AGGREGATES` table and in its changelog topic `order-aggregates` contain all aggregates of the
 same type.
 
-Consumers of `order-aggregates` topic receive all commands and events relates to the same aggregate
+Consumers of `order-aggregates` topic receive all commands and events related to the same aggregate
 type.
 
 ##### <a name="0b584912c4fa746206884e080303ed49"></a>Checkpoints
@@ -230,15 +299,21 @@ type.
 Consumer commits offset of the last message after processing it. Consumer will continue consuming
 messages from where it left off in the offset after a restart.
 
+##### Drawbacks
+
+1. Commands have to be persisted. It's easy to flood the system with invalid commands that will take
+   a lot of space in the storage.
+2. A command must generate one or more events (and never zero events). Otherwise, optimistic concurrency check
+   implementation will work incorrectly.
+3. Adding event sourcing snapshotting is possible but will complicate the solution even more.
+   Snapshotting is an optimization technique where a snapshot of the aggregate's state is also
+   saved, so an application can restore the current state of an aggregate from the snapshot instead
+   of from scratch.
+
 ## <a name="56a081f86b7ec6a7d523c7e6d186f1a3"></a>Why ksqlDB?
 
-Kafka is not for event sourcing, isn't it?
-
-Kafka alone is not an event store, but Kafka and ksqlDB together allow building full-featured event
-stores.
-
-It is also possible to build event sourced systems with Kafka Streams. I find ksqlDB simpler and
-more convenient solution for event sourcing because Kafka Streams has a few limitations:
+It is possible to build event sourced systems with Kafka Streams, but I find ksqlDB simpler and more
+convenient solution for event sourcing because Kafka Streams has a few limitations:
 
 * Kafka Streams is a library for JVM (Java, Scala etc.) and not a server.
 * Kafka Streams DSL has steep learning curve compared to the SQL dialect of ksqlDB.
@@ -291,27 +366,20 @@ ksqlDB has the following advantages:
 
 7. Run [`test.sh`](test.sh) script and see the output.
 
-8. Check that integration events were sent
-   ```bash
-   docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
-   #ksql>
-   PRINT 'order-integration-events' FROM BEGINNING;
-   ```
+The `test.sh` script has the following instructions:
 
-The `test.sh` script does the following:
-
-1. Places new order
+1. Place new order.
     ```bash
-    ORDER_ID=$(curl -s -X POST http://localhost:8080/orders/ -d '{"riderId":"63770803-38f4-4594-aec2-4c74918f7165","price":"123.45","route":[{"address":"Київ, вулиця Полярна, 17А","lat":50.51980052414157,"lng":30.467197278948536},{"address":"Київ, вулиця Новокостянтинівська, 18В","lat":50.48509161169076,"lon":30.485170724431292}]}' -H 'Content-Type: application/json' | jq -r .orderId)
+    ORDER_ID=$(curl -s -X POST http://localhost:8080/orders/ -d '{"riderId":"63770803-38f4-4594-aec2-4c74918f7165","price":"123.45","route":[{"address":"Київ, вулиця Полярна, 17А","lat":50.51980052414157,"lon":30.467197278948536},{"address":"Київ, вулиця Новокостянтинівська, 18В","lat":50.48509161169076,"lon":30.485170724431292}]}' -H 'Content-Type: application/json' | jq -r .orderId)
     sleep 1s
     ```
-2. Gets the placed order
+2. Get the placed order.
     ```bash
     curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
     ```
     ```json
     {
-      "id": "309aef67-c152-41c1-97a7-aeef839804b5",
+      "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
       "version": 1,
       "status": "PLACED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
@@ -320,7 +388,7 @@ The `test.sh` script does the following:
         {
           "address": "Київ, вулиця Полярна, 17А",
           "lat": 50.51980052414157,
-          "lon": 0
+          "lon": 30.467197278948536
         },
         {
           "address": "Київ, вулиця Новокостянтинівська, 18В",
@@ -328,21 +396,24 @@ The `test.sh` script does the following:
           "lon": 30.485170724431292
         }
       ],
-      "placedDate": "2021-04-19T08:58:19.818153Z"
+      "placedDate": "2021-04-23T15:26:22.543938Z",
+      "errors": []
     }
     ```
-3. Accepts the order
+3. Accept the order.
+   Try to cancel the order concurrently to simulate a write-write conflict.
     ```bash
     curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"ACCEPTED","driverId":"2c068a1a-9263-433f-a70b-067d51b98378","version":1}' -H 'Content-Type: application/json'
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":1}' -H 'Content-Type: application/json'
     sleep 1s
     ```
-4. Gets the accepted order
+4. Get the accepted order with optimistic concurrency control error.
     ```bash
     curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
     ```
     ```json
     {
-      "id": "309aef67-c152-41c1-97a7-aeef839804b5",
+      "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
       "version": 2,
       "status": "ACCEPTED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
@@ -351,7 +422,7 @@ The `test.sh` script does the following:
         {
           "address": "Київ, вулиця Полярна, 17А",
           "lat": 50.51980052414157,
-          "lon": 0
+          "lon": 30.467197278948536
         },
         {
           "address": "Київ, вулиця Новокостянтинівська, 18В",
@@ -360,31 +431,38 @@ The `test.sh` script does the following:
         }
       ],
       "driverId": "2c068a1a-9263-433f-a70b-067d51b98378",
-      "placedDate": "2021-04-19T08:58:19.818153Z",
-      "acceptedDate": "2021-04-19T08:58:20.895710Z"
+      "placedDate": "2021-04-23T15:26:22.543938Z",
+      "acceptedDate": "2021-04-23T15:26:23.542921Z",
+      "errors": [
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Concurrent modification"
+        }
+      ]
     }
     ```
-5. Completes the order
+5. Try to cancel an outdated version of the order to simulate lost update.
     ```bash
-    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":2}' -H 'Content-Type: application/json'
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":1}' -H 'Content-Type: application/json'
     sleep 1s
     ```
-6. Gets the completed order
+6. Get the accepted order with optimistic concurrency control error.
     ```bash
     curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
     ```
     ```json
     {
-      "id": "309aef67-c152-41c1-97a7-aeef839804b5",
+      "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
       "version": 3,
-      "status": "COMPLETED",
+      "status": "ACCEPTED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
       "price": 123.45,
       "route": [
         {
           "address": "Київ, вулиця Полярна, 17А",
           "lat": 50.51980052414157,
-          "lon": 0
+          "lon": 30.467197278948536
         },
         {
           "address": "Київ, вулиця Новокостянтинівська, 18В",
@@ -393,32 +471,43 @@ The `test.sh` script does the following:
         }
       ],
       "driverId": "2c068a1a-9263-433f-a70b-067d51b98378",
-      "placedDate": "2021-04-19T08:58:19.818153Z",
-      "acceptedDate": "2021-04-19T08:58:20.895710Z",
-      "completedDate": "2021-04-19T08:58:21.952476Z"
+      "placedDate": "2021-04-23T15:26:22.543938Z",
+      "acceptedDate": "2021-04-23T15:26:23.542921Z",
+      "errors": [
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Concurrent modification"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Actual version 2 doesn't match expected version 1"
+        }
+      ]
     }
     ```
-7. Tries to cancel the completed order
+7. Try to cancel a version of the order 'from the future' to simulate unordering.
     ```bash
-    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":3}' -H 'Content-Type: application/json'
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":4}' -H 'Content-Type: application/json'
     sleep 1s
     ```
-8. Gets the completed order with the error indicating that completed order can't be cancelled
+8. Get the accepted order with optimistic concurrency control error.
     ```bash
     curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
     ```
     ```json
     {
-      "id": "309aef67-c152-41c1-97a7-aeef839804b5",
+      "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
       "version": 4,
-      "status": "COMPLETED",
+      "status": "ACCEPTED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
       "price": 123.45,
       "route": [
         {
           "address": "Київ, вулиця Полярна, 17А",
           "lat": 50.51980052414157,
-          "lon": 0
+          "lon": 30.467197278948536
         },
         {
           "address": "Київ, вулиця Новокостянтинівська, 18В",
@@ -427,57 +516,140 @@ The `test.sh` script does the following:
         }
       ],
       "driverId": "2c068a1a-9263-433f-a70b-067d51b98378",
-      "placedDate": "2021-04-19T08:58:19.818153Z",
-      "acceptedDate": "2021-04-19T08:58:20.895710Z",
-      "completedDate": "2021-04-19T08:58:21.952476Z"
+      "placedDate": "2021-04-23T15:26:22.543938Z",
+      "acceptedDate": "2021-04-23T15:26:23.542921Z",
+      "errors": [
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Concurrent modification"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Actual version 2 doesn't match expected version 1"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 4,
+          "message": "Actual version 3 doesn't match expected version 4"
+        }
+      ]
     }
     ```
-9. Gets all events for the order
+9. Complete the order.
     ```bash
-    curl -s -X GET http://localhost:8080/orders/$ORDER_ID/events | jq
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":4}' -H 'Content-Type: application/json'
+    sleep 1s
+    ```
+10. Get the completed order.
+    ```bash
+    curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
     ```
     ```json
-    [
-      {
-        "aggregateId": "309aef67-c152-41c1-97a7-aeef839804b5",
-        "version": 1,
-        "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
-        "price": 123.45,
-        "route": [
-          {
-            "address": "Київ, вулиця Полярна, 17А",
-            "lat": 50.51980052414157,
-            "lon": 0
-          },
-          {
-            "address": "Київ, вулиця Новокостянтинівська, 18В",
-            "lat": 50.48509161169076,
-            "lon": 30.485170724431292
-          }
-        ],
-        "createdDate": "2021-04-19T08:58:19.818153Z",
-        "eventType": "OrderPlacedEvent"
-      },
-      {
-        "aggregateId": "309aef67-c152-41c1-97a7-aeef839804b5",
-        "version": 2,
-        "driverId": "2c068a1a-9263-433f-a70b-067d51b98378",
-        "createdDate": "2021-04-19T08:58:20.895710Z",
-        "eventType": "OrderAcceptedEvent"
-      },
-      {
-        "aggregateId": "309aef67-c152-41c1-97a7-aeef839804b5",
-        "version": 3,
-        "createdDate": "2021-04-19T08:58:21.952476Z",
-        "eventType": "OrderCompletedEvent"
-      },
-      {
-        "aggregateId": "309aef67-c152-41c1-97a7-aeef839804b5",
-        "version": 4,
-        "errorMessage": "Order 309aef67-c152-41c1-97a7-aeef839804b5 in status COMPLETED can't be cancelled",
-        "createdDate": "2021-04-19T08:58:23.024546Z",
-        "eventType": "ErrorEvent"
-      }
-    ]
+    {
+      "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
+      "version": 5,
+      "status": "COMPLETED",
+      "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
+      "price": 123.45,
+      "route": [
+        {
+          "address": "Київ, вулиця Полярна, 17А",
+          "lat": 50.51980052414157,
+          "lon": 30.467197278948536
+        },
+        {
+          "address": "Київ, вулиця Новокостянтинівська, 18В",
+          "lat": 50.48509161169076,
+          "lon": 30.485170724431292
+        }
+      ],
+      "driverId": "2c068a1a-9263-433f-a70b-067d51b98378",
+      "placedDate": "2021-04-23T15:26:22.543938Z",
+      "acceptedDate": "2021-04-23T15:26:23.542921Z",
+      "completedDate": "2021-04-23T15:26:26.791512Z",
+      "errors": [
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Concurrent modification"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Actual version 2 doesn't match expected version 1"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 4,
+          "message": "Actual version 3 doesn't match expected version 4"
+        }
+      ]
+    }
     ```
-
+11. Try to cancel a completed order to simulate business rule violation.
+    ```bash
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":5}' -H 'Content-Type: application/json'
+    sleep 1s
+    ```
+12. Get the completed order with business rule validation error.
+    ```bash
+    curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
+    ```
+    ```json
+    {
+      "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
+      "version": 6,
+      "status": "COMPLETED",
+      "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
+      "price": 123.45,
+      "route": [
+        {
+          "address": "Київ, вулиця Полярна, 17А",
+          "lat": 50.51980052414157,
+          "lon": 30.467197278948536
+        },
+        {
+          "address": "Київ, вулиця Новокостянтинівська, 18В",
+          "lat": 50.48509161169076,
+          "lon": 30.485170724431292
+        }
+      ],
+      "driverId": "2c068a1a-9263-433f-a70b-067d51b98378",
+      "placedDate": "2021-04-23T15:26:22.543938Z",
+      "acceptedDate": "2021-04-23T15:26:23.542921Z",
+      "completedDate": "2021-04-23T15:26:26.791512Z",
+      "errors": [
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Concurrent modification"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 1,
+          "message": "Actual version 2 doesn't match expected version 1"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 4,
+          "message": "Actual version 3 doesn't match expected version 4"
+        },
+        {
+          "command": "CancelOrderCommand",
+          "expectedVersion": 5,
+          "message": "Order in status COMPLETED can't be cancelled"
+        }
+      ]
+    }
+    ```
+13. Print integration events.
+    ```bash
+    docker exec -it kafka /bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic order-integration-events --from-beginning --property print.key=true --timeout-ms 3000
+    ```
+    ```
+    827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderPlacedEvent","event_timestamp":1619191582543,"version":1,"status":"PLACED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}]}
+    827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderAcceptedEvent","event_timestamp":1619191583542,"version":2,"status":"ACCEPTED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
+    827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderCompletedEvent","event_timestamp":1619191586791,"version":5,"status":"COMPLETED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
+    ```

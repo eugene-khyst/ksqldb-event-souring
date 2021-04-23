@@ -18,12 +18,12 @@ public class KafkaTopicsConfig {
   }
 
   @Bean
-  public NewTopic orderAggregates() {
+  public NewTopic orderAggregatesTopic() {
     return TopicBuilder.name(TOPIC_ORDER_AGGREGATES).partitions(10).replicas(1).build();
   }
 
   @Bean
-  public NewTopic orderIntegrationEvents() {
+  public NewTopic orderIntegrationEventsTopic() {
     return TopicBuilder.name(TOPIC_ORDER_INTEGRATION_EVENTS).partitions(10).replicas(1).build();
   }
 }

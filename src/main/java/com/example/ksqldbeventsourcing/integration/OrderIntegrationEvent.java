@@ -12,30 +12,30 @@ import lombok.Value;
 @Builder
 public class OrderIntegrationEvent {
 
-  @JsonProperty("ORDER_ID")
+  @JsonProperty("order_id")
   UUID orderId;
 
-  @JsonProperty("EVENT_TYPE")
+  @JsonProperty("event_type")
   String eventType;
 
-  @JsonProperty("EVENT_TIMESTAMP")
+  @JsonProperty("event_timestamp")
   long eventTimestamp;
 
-  @JsonProperty("VERSION")
+  @JsonProperty("version")
   int version;
 
-  @JsonProperty("STATUS")
+  @JsonProperty("status")
   OrderStatus status;
 
-  @JsonProperty("RIDER_ID")
+  @JsonProperty("rider_id")
   UUID riderId;
 
-  @JsonProperty("PRICE")
+  @JsonProperty("price")
   BigDecimal price;
 
-  @JsonProperty("ROUTE")
+  @JsonProperty("route")
   List<Waypoint> route;
 
-  @JsonProperty("DRIVER_ID")
+  @JsonProperty("driver_id")
   UUID driverId;
 }

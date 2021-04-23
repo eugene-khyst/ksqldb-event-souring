@@ -7,7 +7,7 @@ import lombok.Data;
 public abstract class Command {
 
   protected final UUID aggregateId;
-  protected final int originalVersion;
+  protected final int expectedVersion;
 
   public String getCommandType() {
     return this.getClass().getSimpleName();

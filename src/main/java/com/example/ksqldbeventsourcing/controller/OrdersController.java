@@ -4,12 +4,9 @@ import com.example.ksqldbeventsourcing.model.command.AcceptOrderCommand;
 import com.example.ksqldbeventsourcing.model.command.CancelOrderCommand;
 import com.example.ksqldbeventsourcing.model.command.CompleteOrderCommand;
 import com.example.ksqldbeventsourcing.model.command.PlaceOrderCommand;
-import com.example.ksqldbeventsourcing.model.domain.Order;
 import com.example.ksqldbeventsourcing.model.domain.OrderStatus;
-import com.example.ksqldbeventsourcing.model.event.Event;
 import com.example.ksqldbeventsourcing.repository.OrderRepository;
 import com.example.ksqldbeventsourcing.service.OrderCommandSender;
-import com.example.ksqldbeventsourcing.service.OrderEventStore;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +32,6 @@ public class OrdersController {
   private final ObjectMapper objectMapper;
   private final OrderCommandSender commandSender;
   private final OrderRepository orderRepository;
-  private final OrderEventStore eventStore;
 
   @PostMapping
   public ResponseEntity<JsonNode> placeOrder(@RequestBody JsonNode request) throws IOException {
@@ -88,15 +84,6 @@ public class OrdersController {
       @PathVariable UUID orderId) {
     return orderRepository
         .findById(orderId)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
-  }
-
-  @GetMapping("/{orderId}/events")
-  public ResponseEntity<List<Event>> getOrderEvents(@PathVariable UUID orderId) {
-    return eventStore
-        .readOrder(orderId)
-        .map(Order::getEvents)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
   }

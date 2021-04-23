@@ -1,6 +1,7 @@
 package com.example.ksqldbeventsourcing.mapper;
 
 import com.example.ksqldbeventsourcing.integration.OrderIntegrationEvent;
+import com.example.ksqldbeventsourcing.model.domain.ErrorMessage;
 import com.example.ksqldbeventsourcing.model.domain.Order;
 import com.example.ksqldbeventsourcing.model.domain.Waypoint;
 import com.example.ksqldbeventsourcing.model.event.Event;
@@ -27,6 +28,9 @@ public interface OrderMapper {
   OrderIntegrationEvent toIntegrationEvent(Event event, Order order);
 
   com.example.ksqldbeventsourcing.model.read.Waypoint toReadModel(Waypoint value);
+
+  @Mapping(source = "commandType", target = "command")
+  com.example.ksqldbeventsourcing.model.read.ErrorMessage toReadModel(ErrorMessage value);
 
   com.example.ksqldbeventsourcing.integration.Waypoint toIntegrationEvent(Waypoint value);
 

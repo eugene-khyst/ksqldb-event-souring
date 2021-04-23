@@ -38,6 +38,7 @@ public class Order implements Persistable<UUID>, Serializable {
   private Instant acceptedDate;
   private Instant completedDate;
   private Instant cancelledDate;
+  @ElementCollection private List<ErrorMessage> errors = new ArrayList<>();
 
   @JsonIgnore
   @Override

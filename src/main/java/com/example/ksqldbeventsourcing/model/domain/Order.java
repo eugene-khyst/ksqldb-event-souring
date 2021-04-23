@@ -41,7 +41,7 @@ public class Order extends Aggregate {
 
   public void process(PlaceOrderCommand command) {
     if (status != null) {
-      error(String.format("Order %s in status %s can't be placed", aggregateId, status));
+      error(command, String.format("Order in status %s can't be placed", status));
       return;
     }
     applyChange(
@@ -55,7 +55,7 @@ public class Order extends Aggregate {
 
   public void process(AcceptOrderCommand command) {
     if (status == OrderStatus.CANCELLED) {
-      error(String.format("Order %s in status %s can't be accepted", aggregateId, status));
+      error(command, String.format("Order in status %s can't be accepted", status));
       return;
     }
     applyChange(new OrderAcceptedEvent(aggregateId, getNextVersion(), command.getDriverId()));
@@ -63,7 +63,7 @@ public class Order extends Aggregate {
 
   public void process(CompleteOrderCommand command) {
     if (status != OrderStatus.ACCEPTED) {
-      error(String.format("Order %s in status %s can't be completed", aggregateId, status));
+      error(command, String.format("Order in status %s can't be completed", status));
       return;
     }
     applyChange(new OrderCompletedEvent(aggregateId, getNextVersion()));
@@ -71,7 +71,7 @@ public class Order extends Aggregate {
 
   public void process(CancelOrderCommand command) {
     if (!EnumSet.of(OrderStatus.PLACED, OrderStatus.ACCEPTED).contains(status)) {
-      error(String.format("Order %s in status %s can't be cancelled", aggregateId, status));
+      error(command, String.format("Order in status %s can't be cancelled", status));
       return;
     }
     applyChange(new OrderCancelledEvent(aggregateId, getNextVersion()));

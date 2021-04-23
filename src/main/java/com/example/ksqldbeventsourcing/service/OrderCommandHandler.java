@@ -3,7 +3,8 @@ package com.example.ksqldbeventsourcing.service;
 import com.example.ksqldbeventsourcing.model.command.Command;
 import com.example.ksqldbeventsourcing.model.domain.Order;
 import com.example.ksqldbeventsourcing.model.event.Event;
-import java.util.UUID;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,26 +16,36 @@ public class OrderCommandHandler {
 
   private final OrderEventPublisher eventPublisher;
 
-  public void handle(Command command, Order order) {
-    if (checkVersionMatches(order.getAggregateId(), command, order)) {
-      log.debug("Processing {} command for order {}", command, order);
+  public void process(List<Command> commands, Order order) {
+    Objects.requireNonNull(commands);
+    Objects.requireNonNull(order);
+    if (commands.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format("Latest commands are empty for order %s", order.getAggregateId()));
+    }
+    Command command = commands.get(0);
+    log.debug("Processing {} command for order {}", command, order);
+    if (checkVersionMatches(command, commands, order)) {
       order.process(command);
     }
     for (Event event : order.getChanges()) {
-      log.debug("Publishing event {} for order {}", event, order);
       eventPublisher.publish(event);
     }
   }
 
-  private boolean checkVersionMatches(UUID orderId, Command command, Order order) {
-    if (order.getBaseVersion() != command.getOriginalVersion()) {
+  private boolean checkVersionMatches(
+      Command latestCommand, List<Command> unprocessedCommands, Order order) {
+    if (order.getBaseVersion() != latestCommand.getExpectedVersion()) {
       order.error(
+          latestCommand,
           String.format(
-              "Order %s base version %s does not match command %s expected version %s",
-              orderId,
-              order.getBaseVersion(),
-              command.getClass().getSimpleName(),
-              command.getOriginalVersion()));
+              "Actual version %s doesn't match expected version %s",
+              order.getBaseVersion(), latestCommand.getExpectedVersion()));
+      return false;
+    }
+    if (unprocessedCommands.size() > 1) {
+      log.debug("Concurrent modification: {}", unprocessedCommands);
+      order.error(latestCommand, "Concurrent modification");
       return false;
     }
     return true;

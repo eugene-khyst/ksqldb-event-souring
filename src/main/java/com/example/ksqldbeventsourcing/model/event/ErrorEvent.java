@@ -11,11 +11,16 @@ import lombok.Value;
 @ToString(callSuper = true)
 public class ErrorEvent extends Event {
 
+  String commandType;
+  int expectedVersion;
   String errorMessage;
 
   @JsonCreator
-  public ErrorEvent(UUID aggregateId, int version, String errorMessage) {
+  public ErrorEvent(
+      UUID aggregateId, int version, String commandType, int expectedVersion, String errorMessage) {
     super(aggregateId, version);
+    this.commandType = commandType;
+    this.expectedVersion = expectedVersion;
     this.errorMessage = errorMessage;
   }
 }
