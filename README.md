@@ -1,7 +1,12 @@
 # Event Sourcing with Kafka and ksqlDB
 
+* [Introduction](#0b79795d3efc95b9976c7c5b933afce2)
 * [Example Domain](#8753dff3c2879207fa06ef1844b1ea4d)
-* [Event Sourcing and CQRS](#06ad43017847f2d88caea2e87018cd72)
+* [Event Sourcing and CQRS 101](#19025f75ca30ec4a46f55a6b9afdeba6)
+    * [State-Oriented Persistence](#436b314e78fec59a76bad8b93b52ee75)
+    * [Event Sourcing](#c4b3d1c8edab1825366ac1d541d8226f)
+    * [CQRS](#b2cf9293622451d86574d2973398ca70)
+    * [Advantages of Event Sourcing and CQRS](#d8818c2c5ba0364540a49273f684b85c)
 * [Requirements for Event Store](#70b356f41293ace9df0d04cd8175ac35)
 * [Solution Architecture](#9f6302143996033ebb94d536b860acc3)
     * [Kafka Topic Architecture](#7a5c6b7581644459b2452045e4b3584d)
@@ -14,10 +19,11 @@
             * [Loading current state](#323effe18de24bcc666f161931c903f3)
             * [Subscribe to all events by aggregate type](#784ff5dca3b046266edf61637822bbff)
             * [Checkpoints](#0b584912c4fa746206884e080303ed49)
+            * [Drawbacks](#0cfc0523189294ac086e11c8e286ba2d)
 * [Why ksqlDB?](#56a081f86b7ec6a7d523c7e6d186f1a3)
 * [How to Run the Sample?](#53af957fc9dc9f7083531a00fe3f364e)
 
-## Introduction
+## <a name="0b79795d3efc95b9976c7c5b933afce2"></a>Introduction
 
 Kafka is not for event sourcing, isn't it?
 
@@ -34,13 +40,13 @@ The example domain is ride hailing.
 * A driver can accept and complete an order.
 * An order can be cancelled before completion.
 
-## <a name="06ad43017847f2d88caea2e87018cd72"></a>Event Sourcing and CQRS 101
+## <a name="19025f75ca30ec4a46f55a6b9afdeba6"></a>Event Sourcing and CQRS 101
 
-### State-Oriented Persistence
+### <a name="436b314e78fec59a76bad8b93b52ee75"></a>State-Oriented Persistence
 
 ![State-oriented persistence](img/es-cqrs-state-oriented-persistence.png)
 
-### Event Sourcing
+### <a name="c4b3d1c8edab1825366ac1d541d8226f"></a>Event Sourcing
 
 Event sourcing persists the state of an entity as a sequence of immutable state-changing events.
 
@@ -54,7 +60,7 @@ Current state of an entity can be restored by replaying all its events.
 
 An entity in event sourcing is also referenced as an aggregate.
 
-### CQRS
+### <a name="b2cf9293622451d86574d2973398ca70"></a>CQRS
 
 CQRS (Command-query responsibility segregation) stands for segregating the responsibility between
 commands (write requests) and queries (read requests). The write requests and the read requests are
@@ -73,7 +79,7 @@ integration with other bounded contexts. Integration events representing the cur
 aggregate should be used for communication between bounded contexts instead of a raw event sourcing
 change events.
 
-### Advantages of Event Sourcing and CQRS
+### <a name="d8818c2c5ba0364540a49273f684b85c"></a>Advantages of Event Sourcing and CQRS
 
 * Having a true history of the system (audit and traceability).
 * Ability to put the system in any prior state (e.g. for debugging).
@@ -299,12 +305,12 @@ type.
 Consumer commits offset of the last message after processing it. Consumer will continue consuming
 messages from where it left off in the offset after a restart.
 
-##### Drawbacks
+##### <a name="0cfc0523189294ac086e11c8e286ba2d"></a>Drawbacks
 
 1. Commands have to be persisted. It's easy to flood the system with invalid commands that will take
    a lot of space in the storage.
-2. A command must generate one or more events (and never zero events). Otherwise, optimistic concurrency check
-   implementation will work incorrectly.
+2. A command must generate one or more events (and never zero events). Otherwise, optimistic
+   concurrency check implementation will work incorrectly.
 3. Adding event sourcing snapshotting is possible but will complicate the solution even more.
    Snapshotting is an optimization technique where a snapshot of the aggregate's state is also
    saved, so an application can restore the current state of an aggregate from the snapshot instead
@@ -400,8 +406,7 @@ The `test.sh` script has the following instructions:
       "errors": []
     }
     ```
-3. Accept the order.
-   Try to cancel the order concurrently to simulate a write-write conflict.
+3. Accept the order. Try to cancel the order concurrently to simulate a write-write conflict.
     ```bash
     curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"ACCEPTED","driverId":"2c068a1a-9263-433f-a70b-067d51b98378","version":1}' -H 'Content-Type: application/json'
     curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":1}' -H 'Content-Type: application/json'
