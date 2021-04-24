@@ -1,6 +1,7 @@
-package com.example.ksqldbeventsourcing.model.command;
+package com.example.ksqldbeventsourcing.domain.writemodel.command;
 
-import com.example.ksqldbeventsourcing.model.domain.Waypoint;
+import com.example.ksqldbeventsourcing.eventsourcing.Command;
+import com.example.ksqldbeventsourcing.domain.writemodel.Waypoint;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.math.BigDecimal;
 import java.util.List;

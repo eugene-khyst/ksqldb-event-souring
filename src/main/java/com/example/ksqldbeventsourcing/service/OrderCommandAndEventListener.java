@@ -1,9 +1,10 @@
 package com.example.ksqldbeventsourcing.service;
 
 import com.example.ksqldbeventsourcing.config.KafkaTopicsConfig;
-import com.example.ksqldbeventsourcing.model.domain.Order;
-import com.example.ksqldbeventsourcing.model.event.Event;
-import com.example.ksqldbeventsourcing.service.OrderJsonMapper.OrderAggregate;
+import com.example.ksqldbeventsourcing.domain.writemodel.Order;
+import com.example.ksqldbeventsourcing.eventsourcing.Event;
+import com.example.ksqldbeventsourcing.service.EventJsonSerde.EventData;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OrderCommandAndEventListener {
 
-  private final OrderJsonMapper jsonMapper;
+  private final EventJsonSerde jsonSerde;
   private final OrderCommandHandler commandHandler;
   private final OrderEventHandler eventHandler;
 
@@ -31,13 +32,14 @@ public class OrderCommandAndEventListener {
       log.warn("Skipping record for order {} with empty payload", orderId);
       return;
     }
-    OrderAggregate orderAggregate = jsonMapper.readOrderAggregate(orderId, json);
-    Order order = orderAggregate.readOrder();
-    if (orderAggregate.isLatestIsCommand()) {
-      commandHandler.process(orderAggregate.readLatestCommands(), order);
+    EventData eventData = jsonSerde.deserialize(json);
+    List<Event> events = eventData.readEvents();
+    Order order = new Order(orderId, events);
+    if (eventData.isLatestIsCommand()) {
+      commandHandler.process(eventData.readLatestCommands(), order);
     } else {
-      Event event = orderAggregate.readLatestEvent();
-      eventHandler.process(event, order);
+      Event latestEvent = events.get(events.size() - 1);
+      eventHandler.process(latestEvent, order);
     }
   }
 }

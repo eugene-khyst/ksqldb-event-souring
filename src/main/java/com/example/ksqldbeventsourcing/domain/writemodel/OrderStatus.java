@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.model.domain;
+package com.example.ksqldbeventsourcing.domain.writemodel;
 
 public enum OrderStatus {
   PLACED,

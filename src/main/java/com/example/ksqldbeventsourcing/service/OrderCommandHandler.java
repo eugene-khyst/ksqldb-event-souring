@@ -1,8 +1,8 @@
 package com.example.ksqldbeventsourcing.service;
 
-import com.example.ksqldbeventsourcing.model.command.Command;
-import com.example.ksqldbeventsourcing.model.domain.Order;
-import com.example.ksqldbeventsourcing.model.event.Event;
+import com.example.ksqldbeventsourcing.eventsourcing.Command;
+import com.example.ksqldbeventsourcing.domain.writemodel.Order;
+import com.example.ksqldbeventsourcing.eventsourcing.Event;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;

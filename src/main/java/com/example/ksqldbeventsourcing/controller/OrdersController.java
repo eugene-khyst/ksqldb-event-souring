@@ -1,10 +1,10 @@
 package com.example.ksqldbeventsourcing.controller;
 
-import com.example.ksqldbeventsourcing.model.command.AcceptOrderCommand;
-import com.example.ksqldbeventsourcing.model.command.CancelOrderCommand;
-import com.example.ksqldbeventsourcing.model.command.CompleteOrderCommand;
-import com.example.ksqldbeventsourcing.model.command.PlaceOrderCommand;
-import com.example.ksqldbeventsourcing.model.domain.OrderStatus;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.AcceptOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.CancelOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.CompleteOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.PlaceOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.OrderStatus;
 import com.example.ksqldbeventsourcing.repository.OrderRepository;
 import com.example.ksqldbeventsourcing.service.OrderCommandSender;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -75,12 +75,12 @@ public class OrdersController {
   }
 
   @GetMapping("/")
-  public ResponseEntity<List<com.example.ksqldbeventsourcing.model.read.Order>> getOrders() {
+  public ResponseEntity<List<com.example.ksqldbeventsourcing.domain.readmodel.Order>> getOrders() {
     return ResponseEntity.ok(orderRepository.findAll());
   }
 
   @GetMapping("/{orderId}")
-  public ResponseEntity<com.example.ksqldbeventsourcing.model.read.Order> getOrder(
+  public ResponseEntity<com.example.ksqldbeventsourcing.domain.readmodel.Order> getOrder(
       @PathVariable UUID orderId) {
     return orderRepository
         .findById(orderId)

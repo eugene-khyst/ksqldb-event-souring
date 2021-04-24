@@ -1,14 +1,15 @@
-package com.example.ksqldbeventsourcing.model.domain;
+package com.example.ksqldbeventsourcing.domain.writemodel;
 
-import com.example.ksqldbeventsourcing.model.command.AcceptOrderCommand;
-import com.example.ksqldbeventsourcing.model.command.CancelOrderCommand;
-import com.example.ksqldbeventsourcing.model.command.CompleteOrderCommand;
-import com.example.ksqldbeventsourcing.model.command.PlaceOrderCommand;
-import com.example.ksqldbeventsourcing.model.event.Event;
-import com.example.ksqldbeventsourcing.model.event.OrderAcceptedEvent;
-import com.example.ksqldbeventsourcing.model.event.OrderCancelledEvent;
-import com.example.ksqldbeventsourcing.model.event.OrderCompletedEvent;
-import com.example.ksqldbeventsourcing.model.event.OrderPlacedEvent;
+import com.example.ksqldbeventsourcing.eventsourcing.Aggregate;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.AcceptOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.CancelOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.CompleteOrderCommand;
+import com.example.ksqldbeventsourcing.domain.writemodel.command.PlaceOrderCommand;
+import com.example.ksqldbeventsourcing.eventsourcing.Event;
+import com.example.ksqldbeventsourcing.domain.writemodel.event.OrderAcceptedEvent;
+import com.example.ksqldbeventsourcing.domain.writemodel.event.OrderCancelledEvent;
+import com.example.ksqldbeventsourcing.domain.writemodel.event.OrderCompletedEvent;
+import com.example.ksqldbeventsourcing.domain.writemodel.event.OrderPlacedEvent;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.EnumSet;

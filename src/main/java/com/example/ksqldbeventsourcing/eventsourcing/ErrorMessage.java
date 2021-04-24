@@ -1,6 +1,5 @@
-package com.example.ksqldbeventsourcing.model.domain;
+package com.example.ksqldbeventsourcing.eventsourcing;
 
-import com.example.ksqldbeventsourcing.model.event.ErrorEvent;
 import lombok.Value;
 
 @Value

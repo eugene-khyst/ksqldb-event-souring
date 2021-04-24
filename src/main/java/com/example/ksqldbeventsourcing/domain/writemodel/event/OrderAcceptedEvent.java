@@ -1,5 +1,6 @@
-package com.example.ksqldbeventsourcing.model.event;
+package com.example.ksqldbeventsourcing.domain.writemodel.event;
 
+import com.example.ksqldbeventsourcing.eventsourcing.Event;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.UUID;
 import lombok.EqualsAndHashCode;

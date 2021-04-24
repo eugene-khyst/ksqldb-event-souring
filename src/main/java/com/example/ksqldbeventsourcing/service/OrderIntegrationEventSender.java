@@ -1,7 +1,7 @@
 package com.example.ksqldbeventsourcing.service;
 
 import com.example.ksqldbeventsourcing.config.KafkaTopicsConfig;
-import com.example.ksqldbeventsourcing.integration.OrderIntegrationEvent;
+import com.example.ksqldbeventsourcing.domain.integration.OrderIntegrationEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;

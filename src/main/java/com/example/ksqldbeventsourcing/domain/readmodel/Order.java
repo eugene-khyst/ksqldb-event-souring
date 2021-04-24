@@ -1,6 +1,6 @@
-package com.example.ksqldbeventsourcing.model.read;
+package com.example.ksqldbeventsourcing.domain.readmodel;
 
-import com.example.ksqldbeventsourcing.model.domain.OrderStatus;
+import com.example.ksqldbeventsourcing.domain.writemodel.OrderStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.math.BigDecimal;

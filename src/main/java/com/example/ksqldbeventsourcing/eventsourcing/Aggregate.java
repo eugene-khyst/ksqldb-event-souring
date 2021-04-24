@@ -1,8 +1,5 @@
-package com.example.ksqldbeventsourcing.model.domain;
+package com.example.ksqldbeventsourcing.eventsourcing;
 
-import com.example.ksqldbeventsourcing.model.command.Command;
-import com.example.ksqldbeventsourcing.model.event.ErrorEvent;
-import com.example.ksqldbeventsourcing.model.event.Event;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -19,7 +16,6 @@ public abstract class Aggregate {
 
   protected final UUID aggregateId;
   protected int baseVersion = 0;
-  protected final List<Event> events;
   protected final List<Event> changes = new ArrayList<>();
   protected final List<ErrorMessage> errors = new ArrayList<>();
 
@@ -27,16 +23,19 @@ public abstract class Aggregate {
     Objects.requireNonNull(aggregateId);
     Objects.requireNonNull(events);
     this.aggregateId = aggregateId;
-    this.events = List.copyOf(events);
-    this.events.forEach(
-        event -> {
-          apply(event);
-          baseVersion = event.getVersion();
-        });
+    loadFromHistory(events);
   }
 
   public Aggregate(UUID aggregateId) {
     this(aggregateId, Collections.emptyList());
+  }
+
+  private void loadFromHistory(List<Event> events) {
+    events.forEach(
+        event -> {
+          apply(event);
+          baseVersion = event.getVersion();
+        });
   }
 
   protected void applyChange(Event event) {

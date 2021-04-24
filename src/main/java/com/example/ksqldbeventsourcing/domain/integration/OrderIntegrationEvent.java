@@ -1,6 +1,6 @@
-package com.example.ksqldbeventsourcing.integration;
+package com.example.ksqldbeventsourcing.domain.integration;
 
-import com.example.ksqldbeventsourcing.model.domain.OrderStatus;
+import com.example.ksqldbeventsourcing.domain.writemodel.OrderStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.util.List;

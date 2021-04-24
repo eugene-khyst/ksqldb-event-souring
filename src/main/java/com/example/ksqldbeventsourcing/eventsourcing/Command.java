@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.model.command;
+package com.example.ksqldbeventsourcing.eventsourcing;
 
 import java.util.UUID;
 import lombok.Data;

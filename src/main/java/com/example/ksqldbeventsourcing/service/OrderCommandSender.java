@@ -1,7 +1,7 @@
 package com.example.ksqldbeventsourcing.service;
 
 import com.example.ksqldbeventsourcing.config.KafkaTopicsConfig;
-import com.example.ksqldbeventsourcing.model.command.Command;
+import com.example.ksqldbeventsourcing.eventsourcing.Command;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OrderCommandSender {
 
-  private final OrderJsonMapper jsonMapper;
+  private final EventJsonSerde jsonSerde;
   private final KafkaTemplate<String, String> kafkaTemplate;
 
   public void send(Command command) {
@@ -22,6 +22,6 @@ public class OrderCommandSender {
     kafkaTemplate.send(
         KafkaTopicsConfig.TOPIC_ORDER_COMMANDS_AND_EVENTS,
         command.getAggregateId().toString(),
-        jsonMapper.write(command));
+        jsonSerde.serialize(command));
   }
 }

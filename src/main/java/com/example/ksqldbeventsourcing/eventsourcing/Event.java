@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.model.event;
+package com.example.ksqldbeventsourcing.eventsourcing;
 
 import java.time.Instant;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.model.read;
+package com.example.ksqldbeventsourcing.domain.readmodel;
 
 import java.io.Serializable;
 import javax.persistence.Embeddable;

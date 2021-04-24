@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.integration;
+package com.example.ksqldbeventsourcing.domain.integration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;

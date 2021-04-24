@@ -1,10 +1,10 @@
 package com.example.ksqldbeventsourcing.mapper;
 
-import com.example.ksqldbeventsourcing.integration.OrderIntegrationEvent;
-import com.example.ksqldbeventsourcing.model.domain.ErrorMessage;
-import com.example.ksqldbeventsourcing.model.domain.Order;
-import com.example.ksqldbeventsourcing.model.domain.Waypoint;
-import com.example.ksqldbeventsourcing.model.event.Event;
+import com.example.ksqldbeventsourcing.domain.integration.OrderIntegrationEvent;
+import com.example.ksqldbeventsourcing.eventsourcing.ErrorMessage;
+import com.example.ksqldbeventsourcing.domain.writemodel.Order;
+import com.example.ksqldbeventsourcing.domain.writemodel.Waypoint;
+import com.example.ksqldbeventsourcing.eventsourcing.Event;
 import java.time.Instant;
 import java.util.Optional;
 import org.mapstruct.Mapper;
@@ -15,7 +15,7 @@ public interface OrderMapper {
 
   @Mapping(source = "aggregateId", target = "id")
   @Mapping(source = "baseVersion", target = "version")
-  com.example.ksqldbeventsourcing.model.read.Order toReadModel(Order order);
+  com.example.ksqldbeventsourcing.domain.readmodel.Order toReadModel(Order order);
 
   @Mapping(source = "order.aggregateId", target = "orderId")
   @Mapping(source = "event.eventType", target = "eventType")
@@ -27,12 +27,12 @@ public interface OrderMapper {
   @Mapping(source = "order.driverId", target = "driverId")
   OrderIntegrationEvent toIntegrationEvent(Event event, Order order);
 
-  com.example.ksqldbeventsourcing.model.read.Waypoint toReadModel(Waypoint value);
+  com.example.ksqldbeventsourcing.domain.readmodel.Waypoint toReadModel(Waypoint value);
 
   @Mapping(source = "commandType", target = "command")
-  com.example.ksqldbeventsourcing.model.read.ErrorMessage toReadModel(ErrorMessage value);
+  com.example.ksqldbeventsourcing.domain.readmodel.ErrorMessage toReadModel(ErrorMessage value);
 
-  com.example.ksqldbeventsourcing.integration.Waypoint toIntegrationEvent(Waypoint value);
+  com.example.ksqldbeventsourcing.domain.integration.Waypoint toIntegrationEvent(Waypoint value);
 
   default long toEpochMilli(Instant instant) {
     return Optional.ofNullable(instant).map(Instant::toEpochMilli).orElse(0L);

@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.model.read;
+package com.example.ksqldbeventsourcing.domain.readmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;

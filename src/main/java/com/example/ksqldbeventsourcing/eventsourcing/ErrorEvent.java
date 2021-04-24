@@ -1,4 +1,4 @@
-package com.example.ksqldbeventsourcing.model.event;
+package com.example.ksqldbeventsourcing.eventsourcing;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.UUID;
