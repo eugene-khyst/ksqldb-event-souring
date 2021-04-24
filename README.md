@@ -319,9 +319,13 @@ messages from where it left off in the offset after a restart.
 
 1. Commands have to be persisted. It's easy to flood the system with invalid commands that will take
    a lot of space in the storage.
-2. A command must generate one or more events (and never zero events). Otherwise, optimistic
+2. Commands are processed asynchronously, so after submitting a command a result of processing can't
+   be received synchronously. API should be designed with asynchrony in mind.
+3. Errors have to be modelled as events due to asynchronous command processing. A command resulting
+   in error produces the `ErrorEvent` and increments the aggregate version.
+4. A command must generate one or more events (and never zero events). Otherwise, optimistic
    concurrency check implementation will work incorrectly.
-3. Adding event sourcing snapshotting is possible but will complicate the solution even more.
+5. Adding event sourcing snapshotting is possible but will complicate the solution even more.
    Snapshotting is an optimization technique where a snapshot of the aggregate's state is also
    saved, so an application can restore the current state of an aggregate from the snapshot instead
    of from scratch.
