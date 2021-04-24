@@ -66,11 +66,12 @@ services:
     image: postgres:13
     hostname: postgres
     container_name: postgres
-    restart: always
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: s3cr3t
+    ports:
+      - "5432:5432"
 
   event-sourcing-app:
     image: example.com/ksqldb-event-sourcing:1.0.0
@@ -86,5 +87,5 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: s3cr3t
       SPRING_KAFKA_BOOTSTRAPSERVERS: "kafka:9092"
-      LOGGING_LEVEL_COM_EXAMPLE_KSQLDBEVENTSOURCING: DEBUG
+      LOGGING_LEVEL_COM_EXAMPLE_EVENTSOURCING: DEBUG
     restart: unless-stopped
