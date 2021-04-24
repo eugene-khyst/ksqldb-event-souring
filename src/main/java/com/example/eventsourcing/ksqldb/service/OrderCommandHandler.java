@@ -1,10 +1,11 @@
 package com.example.eventsourcing.ksqldb.service;
 
-import com.example.eventsourcing.ksqldb.eventsourcing.Event;
-import com.example.eventsourcing.ksqldb.eventsourcing.Command;
 import com.example.eventsourcing.ksqldb.domain.writemodel.Order;
+import com.example.eventsourcing.ksqldb.eventsourcing.Command;
+import com.example.eventsourcing.ksqldb.eventsourcing.Event;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,17 +17,19 @@ public class OrderCommandHandler {
 
   private final OrderEventPublisher eventPublisher;
 
-  public void process(List<Command> commands, Order order) {
+  public void process(UUID orderId, List<Command> commands, List<Event> events) {
+    Objects.requireNonNull(orderId);
     Objects.requireNonNull(commands);
-    Objects.requireNonNull(order);
+    Objects.requireNonNull(events);
     if (commands.isEmpty()) {
       throw new IllegalArgumentException(
-          String.format("Latest commands are empty for order %s", order.getAggregateId()));
+          String.format("Latest commands are empty for order %s", orderId));
     }
-    Command command = commands.get(0);
-    log.debug("Processing {} command for order {}", command, order);
-    if (checkVersionMatches(command, commands, order)) {
-      order.process(command);
+    Order order = new Order(orderId, events);
+    Command latestCommand = commands.get(0);
+    log.debug("Processing {} command for order {}", latestCommand, events);
+    if (checkVersionMatches(latestCommand, commands, order)) {
+      order.process(latestCommand);
     }
     for (Event event : order.getChanges()) {
       eventPublisher.publish(event);

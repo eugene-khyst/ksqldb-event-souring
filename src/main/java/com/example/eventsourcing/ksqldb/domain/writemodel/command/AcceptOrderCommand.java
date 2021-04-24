@@ -17,8 +17,8 @@ public class AcceptOrderCommand extends Command {
 
   @Builder
   @JsonCreator
-  public AcceptOrderCommand(UUID aggregateId, int originalVersion, UUID driverId) {
-    super(aggregateId, originalVersion);
+  public AcceptOrderCommand(UUID aggregateId, int expectedVersion, UUID driverId) {
+    super(aggregateId, expectedVersion);
     this.driverId = driverId;
   }
 }

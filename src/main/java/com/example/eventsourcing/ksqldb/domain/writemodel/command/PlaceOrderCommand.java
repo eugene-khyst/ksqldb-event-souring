@@ -23,8 +23,8 @@ public class PlaceOrderCommand extends Command {
   @Builder
   @JsonCreator
   public PlaceOrderCommand(
-      UUID aggregateId, int originalVersion, UUID riderId, BigDecimal price, List<Waypoint> route) {
-    super(aggregateId, originalVersion);
+      UUID aggregateId, int expectedVersion, UUID riderId, BigDecimal price, List<Waypoint> route) {
+    super(aggregateId, expectedVersion);
     this.riderId = riderId;
     this.price = price;
     this.route = List.copyOf(route);

@@ -2,7 +2,6 @@ package com.example.eventsourcing.ksqldb.service;
 
 import com.example.eventsourcing.ksqldb.config.KafkaTopicsConfig;
 import com.example.eventsourcing.ksqldb.eventsourcing.Event;
-import com.example.eventsourcing.ksqldb.domain.writemodel.Order;
 import com.example.eventsourcing.ksqldb.service.EventJsonSerde.EventData;
 import java.util.List;
 import java.util.UUID;
@@ -34,12 +33,10 @@ public class OrderCommandAndEventListener {
     }
     EventData eventData = jsonSerde.deserialize(json);
     List<Event> events = eventData.readEvents();
-    Order order = new Order(orderId, events);
     if (eventData.isLatestIsCommand()) {
-      commandHandler.process(eventData.readLatestCommands(), order);
+      commandHandler.process(orderId, eventData.readLatestCommands(), events);
     } else {
-      Event latestEvent = events.get(events.size() - 1);
-      eventHandler.process(latestEvent, order);
+      eventHandler.process(orderId, events);
     }
   }
 }

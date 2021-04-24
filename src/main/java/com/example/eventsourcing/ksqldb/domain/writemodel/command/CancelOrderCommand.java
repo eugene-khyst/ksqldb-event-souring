@@ -13,7 +13,7 @@ import lombok.Value;
 public class CancelOrderCommand extends Command {
 
   @JsonCreator
-  public CancelOrderCommand(UUID aggregateId, int originalVersion) {
-    super(aggregateId, originalVersion);
+  public CancelOrderCommand(UUID aggregateId, int expectedVersion) {
+    super(aggregateId, expectedVersion);
   }
 }

@@ -40,7 +40,7 @@ public class OrdersController {
     commandSender.send(
         PlaceOrderCommand.builder()
             .aggregateId(orderId)
-            .originalVersion(0)
+            .expectedVersion(0)
             .riderId(UUID.fromString(request.get("riderId").asText()))
             .price(new BigDecimal(request.get("price").asText()))
             .route(
@@ -60,7 +60,7 @@ public class OrdersController {
         commandSender.send(
             AcceptOrderCommand.builder()
                 .aggregateId(orderId)
-                .originalVersion(version)
+                .expectedVersion(version)
                 .driverId(UUID.fromString(request.get("driverId").asText()))
                 .build());
         return ResponseEntity.accepted().build();
