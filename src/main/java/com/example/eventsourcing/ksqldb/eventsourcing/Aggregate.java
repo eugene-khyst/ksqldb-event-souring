@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
+@NoArgsConstructor
 @Slf4j
 public abstract class Aggregate {
 
@@ -30,8 +32,6 @@ public abstract class Aggregate {
   public Aggregate(UUID aggregateId) {
     this(aggregateId, Collections.emptyList());
   }
-
-  public Aggregate() {}
 
   private void loadFromHistory(List<Event> events) {
     events.forEach(
