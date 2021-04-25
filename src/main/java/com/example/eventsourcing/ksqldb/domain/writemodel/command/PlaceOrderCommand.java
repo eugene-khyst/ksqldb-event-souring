@@ -2,26 +2,26 @@ package com.example.eventsourcing.ksqldb.domain.writemodel.command;
 
 import com.example.eventsourcing.ksqldb.domain.writemodel.Waypoint;
 import com.example.eventsourcing.ksqldb.eventsourcing.Command;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.Value;
 
-@Value
+@Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class PlaceOrderCommand extends Command {
 
-  UUID riderId;
-  BigDecimal price;
-  List<Waypoint> route;
+  private UUID riderId;
+  private BigDecimal price;
+  private List<Waypoint> route;
 
   @Builder
-  @JsonCreator
   public PlaceOrderCommand(
       UUID aggregateId, int expectedVersion, UUID riderId, BigDecimal price, List<Waypoint> route) {
     super(aggregateId, expectedVersion);

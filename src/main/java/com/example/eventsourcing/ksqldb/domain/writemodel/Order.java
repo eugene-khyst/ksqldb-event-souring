@@ -8,20 +8,18 @@ import com.example.eventsourcing.ksqldb.domain.writemodel.event.OrderAcceptedEve
 import com.example.eventsourcing.ksqldb.domain.writemodel.event.OrderCancelledEvent;
 import com.example.eventsourcing.ksqldb.domain.writemodel.event.OrderCompletedEvent;
 import com.example.eventsourcing.ksqldb.domain.writemodel.event.OrderPlacedEvent;
-import com.example.eventsourcing.ksqldb.eventsourcing.Event;
 import com.example.eventsourcing.ksqldb.eventsourcing.Aggregate;
+import com.example.eventsourcing.ksqldb.eventsourcing.Event;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
-@Getter
-@Setter
+@Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class Order extends Aggregate {
@@ -36,6 +34,10 @@ public class Order extends Aggregate {
   private Instant completedDate;
   private Instant cancelledDate;
 
+  public Order(UUID aggregateId) {
+    super(aggregateId);
+  }
+
   public Order(UUID orderId, List<Event> events) {
     super(orderId, events);
   }
@@ -46,12 +48,13 @@ public class Order extends Aggregate {
       return;
     }
     applyChange(
-        new OrderPlacedEvent(
-            aggregateId,
-            getNextVersion(),
-            command.getRiderId(),
-            command.getPrice(),
-            command.getRoute()));
+        OrderPlacedEvent.builder()
+            .aggregateId(aggregateId)
+            .version(getNextVersion())
+            .riderId(command.getRiderId())
+            .price(command.getPrice())
+            .route(command.getRoute())
+            .build());
   }
 
   public void process(AcceptOrderCommand command) {
@@ -59,7 +62,12 @@ public class Order extends Aggregate {
       error(command, String.format("Order in status %s can't be accepted", status));
       return;
     }
-    applyChange(new OrderAcceptedEvent(aggregateId, getNextVersion(), command.getDriverId()));
+    applyChange(
+        OrderAcceptedEvent.builder()
+            .aggregateId(aggregateId)
+            .version(getNextVersion())
+            .driverId(command.getDriverId())
+            .build());
   }
 
   public void process(CompleteOrderCommand command) {

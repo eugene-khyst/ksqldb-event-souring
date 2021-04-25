@@ -14,8 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Aggregate {
 
-  protected final UUID aggregateId;
+  protected UUID aggregateId;
   protected int baseVersion = 0;
+
   protected final List<Event> changes = new ArrayList<>();
   protected final List<ErrorMessage> errors = new ArrayList<>();
 
@@ -29,6 +30,8 @@ public abstract class Aggregate {
   public Aggregate(UUID aggregateId) {
     this(aggregateId, Collections.emptyList());
   }
+
+  public Aggregate() {}
 
   private void loadFromHistory(List<Event> events) {
     events.forEach(
@@ -74,12 +77,13 @@ public abstract class Aggregate {
 
   public void error(Command command, String errorMessage) {
     applyChange(
-        new ErrorEvent(
-            aggregateId,
-            getNextVersion(),
-            command.getCommandType(),
-            command.getExpectedVersion(),
-            errorMessage));
+        ErrorEvent.builder()
+            .aggregateId(aggregateId)
+            .version(getNextVersion())
+            .commandType(command.getCommandType())
+            .expectedVersion(command.getExpectedVersion())
+            .errorMessage(errorMessage)
+            .build());
   }
 
   public void apply(ErrorEvent event) {

@@ -1,23 +1,31 @@
 package com.example.eventsourcing.ksqldb.eventsourcing;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import java.time.Instant;
 import java.util.UUID;
+import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.Value;
 
-@Value
+@Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class ErrorEvent extends Event {
 
-  String commandType;
-  int expectedVersion;
-  String errorMessage;
+  private String commandType;
+  private int expectedVersion;
+  private String errorMessage;
 
-  @JsonCreator
+  @Builder
   public ErrorEvent(
-      UUID aggregateId, int version, String commandType, int expectedVersion, String errorMessage) {
+      UUID aggregateId,
+      int version,
+      Instant createdDate,
+      String commandType,
+      int expectedVersion,
+      String errorMessage) {
     super(aggregateId, version);
     this.commandType = commandType;
     this.expectedVersion = expectedVersion;

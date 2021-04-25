@@ -2,31 +2,31 @@ package com.example.eventsourcing.ksqldb.domain.writemodel.event;
 
 import com.example.eventsourcing.ksqldb.domain.writemodel.Waypoint;
 import com.example.eventsourcing.ksqldb.eventsourcing.Event;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.Value;
 
-@Value
+@Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class OrderPlacedEvent extends Event {
 
-  UUID riderId;
-  BigDecimal price;
-  List<Waypoint> route;
+  private UUID riderId;
+  private BigDecimal price;
+  private List<Waypoint> route;
 
   @Builder
-  @JsonCreator
   public OrderPlacedEvent(
       UUID aggregateId, int version, UUID riderId, BigDecimal price, List<Waypoint> route) {
     super(aggregateId, version);
     this.riderId = riderId;
     this.price = price;
-    this.route = List.copyOf(route);
+    this.route = route;
   }
 }

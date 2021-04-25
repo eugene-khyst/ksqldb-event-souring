@@ -1,20 +1,22 @@
 package com.example.eventsourcing.ksqldb.domain.writemodel.event;
 
 import com.example.eventsourcing.ksqldb.eventsourcing.Event;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.UUID;
+import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.Value;
 
-@Value
+@Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class OrderAcceptedEvent extends Event {
 
-  UUID driverId;
+  private UUID driverId;
 
-  @JsonCreator
+  @Builder
   public OrderAcceptedEvent(UUID aggregateId, int version, UUID driverId) {
     super(aggregateId, version);
     this.driverId = driverId;
