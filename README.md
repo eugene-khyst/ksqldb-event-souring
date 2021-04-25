@@ -376,7 +376,7 @@ ksqlDB has the following advantages:
 
 4. Run Kafka, ksqlDB and event-sourcing-app
     ```bash
-    docker-compose up -d
+    docker-compose up -d --scale event-sourcing-app=2
     # wait a few minutes
     ```
 5. Follow the logs of the application

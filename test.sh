@@ -53,4 +53,4 @@ curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
 echo
 
 echo "Print integration events"
-docker exec -it kafka /bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic order-integration-events --from-beginning --property print.key=true --timeout-ms 3000
+docker-compose exec kafka /bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic order-integration-events --from-beginning --property print.key=true --timeout-ms 3000

@@ -22,9 +22,8 @@ public class PlaceOrderCommand extends Command {
   private List<Waypoint> route;
 
   @Builder
-  public PlaceOrderCommand(
-      UUID aggregateId, int expectedVersion, UUID riderId, BigDecimal price, List<Waypoint> route) {
-    super(aggregateId, expectedVersion);
+  public PlaceOrderCommand(UUID aggregateId, UUID riderId, BigDecimal price, List<Waypoint> route) {
+    super(aggregateId, 0);
     this.riderId = riderId;
     this.price = price;
     this.route = List.copyOf(route);

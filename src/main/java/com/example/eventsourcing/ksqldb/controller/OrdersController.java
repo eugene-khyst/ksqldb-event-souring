@@ -1,11 +1,11 @@
 package com.example.eventsourcing.ksqldb.controller;
 
 import com.example.eventsourcing.ksqldb.domain.readmodel.Order;
-import com.example.eventsourcing.ksqldb.domain.writemodel.command.AcceptOrderCommand;
-import com.example.eventsourcing.ksqldb.domain.writemodel.command.CompleteOrderCommand;
-import com.example.eventsourcing.ksqldb.domain.writemodel.command.CancelOrderCommand;
-import com.example.eventsourcing.ksqldb.domain.writemodel.command.PlaceOrderCommand;
 import com.example.eventsourcing.ksqldb.domain.writemodel.OrderStatus;
+import com.example.eventsourcing.ksqldb.domain.writemodel.command.AcceptOrderCommand;
+import com.example.eventsourcing.ksqldb.domain.writemodel.command.CancelOrderCommand;
+import com.example.eventsourcing.ksqldb.domain.writemodel.command.CompleteOrderCommand;
+import com.example.eventsourcing.ksqldb.domain.writemodel.command.PlaceOrderCommand;
 import com.example.eventsourcing.ksqldb.repository.OrderRepository;
 import com.example.eventsourcing.ksqldb.service.OrderCommandSender;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -40,7 +40,6 @@ public class OrdersController {
     commandSender.send(
         PlaceOrderCommand.builder()
             .aggregateId(orderId)
-            .expectedVersion(0)
             .riderId(UUID.fromString(request.get("riderId").asText()))
             .price(new BigDecimal(request.get("price").asText()))
             .route(
@@ -81,8 +80,7 @@ public class OrdersController {
   }
 
   @GetMapping("/{orderId}")
-  public ResponseEntity<Order> getOrder(
-      @PathVariable UUID orderId) {
+  public ResponseEntity<Order> getOrder(@PathVariable UUID orderId) {
     return orderRepository
         .findById(orderId)
         .map(ResponseEntity::ok)

@@ -3,8 +3,6 @@ version: '2'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:6.0.0
-    hostname: zookeeper
-    container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
@@ -14,7 +12,6 @@ services:
   kafka:
     image: confluentinc/cp-kafka:6.0.0
     hostname: kafka
-    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -33,8 +30,6 @@ services:
 
   schema-registry:
     image: confluentinc/cp-schema-registry:6.0.0
-    hostname: schema-registry
-    container_name: schema-registry
     depends_on:
       - kafka
     ports:
@@ -45,8 +40,6 @@ services:
 
   ksqldb-server:
     image: confluentinc/ksqldb-server:0.15.0
-    hostname: ksqldb-server
-    container_name: ksqldb-server
     depends_on:
       - kafka
       - schema-registry
@@ -64,8 +57,6 @@ services:
 
   postgres:
     image: postgres:13
-    hostname: postgres
-    container_name: postgres
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
@@ -75,13 +66,12 @@ services:
 
   event-sourcing-app:
     image: example.com/ksqldb-event-sourcing:1.0.0
-    container_name: event-sourcing-app
     depends_on:
       - kafka
       - ksqldb-server
       - postgres
     ports:
-      - "8080:8080"
+      - "8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
       SPRING_DATASOURCE_USERNAME: admin
@@ -89,3 +79,12 @@ services:
       SPRING_KAFKA_BOOTSTRAPSERVERS: "kafka:9092"
       LOGGING_LEVEL_COM_EXAMPLE_EVENTSOURCING: DEBUG
     restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    depends_on:
+      - event-sourcing-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
