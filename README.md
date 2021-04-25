@@ -35,6 +35,11 @@ This repository provides a sample of event sourced system that uses Kafka and ks
 ![Kafka Logo](img/kafka-logo.png)
 ![ksqlDB Logo](img/ksqldb-logo.png)
 
+See also
+
+* [Event Sourcing with PostgreSQL](https://github.com/evgeniy-khist/postgresql-event-sourcing)
+* [Event Sourcing with EventStoreDB](https://github.com/evgeniy-khist/eventstoredb-event-sourcing)
+
 ## <a name="8753dff3c2879207fa06ef1844b1ea4d"></a>Example Domain
 
 The example domain is ride hailing.
