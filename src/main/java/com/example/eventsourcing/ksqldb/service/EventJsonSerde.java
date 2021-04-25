@@ -26,14 +26,14 @@ public class EventJsonSerde {
 
     private final List<Boolean> isCommandList;
     private final List<String> typeList;
-    private final List<String> detailsList;
+    private final List<String> jsonDataList;
 
     @SneakyThrows
     public EventData(String json) {
       JsonNode jsonNode = objectMapper.readTree(json);
       this.isCommandList = readIsCommandList(jsonNode);
       this.typeList = readTypeList(jsonNode);
-      this.detailsList = readDetailsList(jsonNode);
+      this.jsonDataList = readJsonDataList(jsonNode);
     }
 
     private List<Boolean> readIsCommandList(JsonNode jsonNode) {
@@ -42,8 +42,8 @@ public class EventJsonSerde {
           .collect(toList());
     }
 
-    private List<String> readDetailsList(JsonNode jsonNode) {
-      return StreamSupport.stream(jsonNode.get("DETAILS_LIST").spliterator(), false)
+    private List<String> readJsonDataList(JsonNode jsonNode) {
+      return StreamSupport.stream(jsonNode.get("JSON_DATA_LIST").spliterator(), false)
           .map(JsonNode::asText)
           .collect(toList());
     }
@@ -55,20 +55,20 @@ public class EventJsonSerde {
     }
 
     @SneakyThrows
-    private Command readCommand(String type, String details) {
+    private Command readCommand(String type, String jsonData) {
       Class<?> clazz = Class.forName(PlaceOrderCommand.class.getPackageName() + "." + type);
-      return (Command) objectMapper.readValue(details, clazz);
+      return (Command) objectMapper.readValue(jsonData, clazz);
     }
 
     @SneakyThrows
-    private Event readEvent(String type, String details) {
+    private Event readEvent(String type, String jsonData) {
       Class<?> clazz;
       if (ErrorEvent.class.getSimpleName().equals(type)) {
         clazz = ErrorEvent.class;
       } else {
         clazz = Class.forName(OrderPlacedEvent.class.getPackageName() + "." + type);
       }
-      return (Event) objectMapper.readValue(details, clazz);
+      return (Event) objectMapper.readValue(jsonData, clazz);
     }
 
     public boolean isLatestIsCommand() {
@@ -77,9 +77,9 @@ public class EventJsonSerde {
 
     public List<Command> readLatestCommands() {
       List<Command> commands = new ArrayList<>();
-      for (int i = detailsList.size() - 1; i >= 0; i--) {
+      for (int i = jsonDataList.size() - 1; i >= 0; i--) {
         if (isCommandList.get(i)) {
-          commands.add(readCommand(typeList.get(i), detailsList.get(i)));
+          commands.add(readCommand(typeList.get(i), jsonDataList.get(i)));
         } else {
           break;
         }
@@ -89,9 +89,9 @@ public class EventJsonSerde {
 
     public List<Event> readEvents() {
       List<Event> events = new ArrayList<>();
-      for (int i = 0; i < detailsList.size(); i++) {
+      for (int i = 0; i < jsonDataList.size(); i++) {
         if (!isCommandList.get(i)) {
-          events.add(readEvent(typeList.get(i), detailsList.get(i)));
+          events.add(readEvent(typeList.get(i), jsonDataList.get(i)));
         }
       }
       return events;
@@ -111,7 +111,7 @@ public class EventJsonSerde {
     on.put("aggregate_id", command.getAggregateId().toString());
     on.put("is_command", true);
     on.put("type", command.getClass().getSimpleName());
-    on.put("details", objectMapper.writeValueAsString(command));
+    on.put("json_data", objectMapper.writeValueAsString(command));
     return on.toString();
   }
 
@@ -122,7 +122,7 @@ public class EventJsonSerde {
     on.put("aggregate_id", event.getAggregateId().toString());
     on.put("is_command", false);
     on.put("type", event.getClass().getSimpleName());
-    on.put("details", objectMapper.writeValueAsString(event));
+    on.put("json_data", objectMapper.writeValueAsString(event));
     return on.toString();
   }
 }

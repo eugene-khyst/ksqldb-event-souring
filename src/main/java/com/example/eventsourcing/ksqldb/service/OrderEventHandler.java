@@ -23,9 +23,9 @@ public class OrderEventHandler {
   public void process(UUID orderId, List<Event> events) {
     Objects.requireNonNull(orderId);
     Objects.requireNonNull(events);
-    log.debug("Processing events {}", events);
     Order order = new Order(orderId, events);
     Event latestEvent = events.get(events.size() - 1);
+    log.debug("Processing event {} for order {}", latestEvent, order);
     readModelUpdater.saveOrUpdate(mapper.toReadModel(order));
     if (!(latestEvent instanceof ErrorEvent)) {
       integrationEventSender.send(mapper.toIntegrationEvent(latestEvent, order));

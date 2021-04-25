@@ -149,7 +149,7 @@ durably in a Kafka topic.
 CREATE STREAM ORDER_EVENTS (
   AGGREGATE_ID STRING KEY,
   TYPE STRING,
-  DETAILS STRING
+  JSON_DATA STRING
 ) WITH (
   KAFKA_TOPIC='order-events',
   PARTITIONS=10,
@@ -165,7 +165,7 @@ CREATE TABLE ORDER_AGGREGATES WITH (
 ) AS SELECT
   AGGREGATE_ID,
   COLLECT_LIST(TYPE) AS TYPE_LIST,
-  COLLECT_LIST(DETAILS) AS DETAILS_LIST
+  COLLECT_LIST(JSON_DATA) AS JSON_DATA_LIST
 FROM ORDER_COMMANDS_AND_EVENTS
 GROUP BY AGGREGATE_ID
 EMIT CHANGES;
@@ -197,7 +197,7 @@ CREATE STREAM IF NOT EXISTS ORDER_COMMANDS_AND_EVENTS (
   AGGREGATE_ID STRING KEY,
   IS_COMMAND BOOLEAN,
   TYPE STRING,
-  DETAILS STRING
+  JSON_DATA STRING
 ) WITH (
   KAFKA_TOPIC='order-commands-and-events',
   PARTITIONS=10,
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS ORDER_AGGREGATES WITH (
   AGGREGATE_ID,
   COLLECT_LIST(IS_COMMAND) AS IS_COMMAND_LIST,
   COLLECT_LIST(TYPE) AS TYPE_LIST,
-  COLLECT_LIST(DETAILS) AS DETAILS_LIST
+  COLLECT_LIST(JSON_DATA) AS JSON_DATA_LIST
 FROM ORDER_COMMANDS_AND_EVENTS
 GROUP BY AGGREGATE_ID
 EMIT CHANGES;
@@ -291,7 +291,7 @@ second, and then retry the first batch and succeed, thereby reversing the order.
 **There is no need to do a remote call to fetch all events for an aggregate.**
 
 `ORDER_AGGREGATES` table records and messages in its changelog topic `order-aggregates` contain all
-aggregate events and commands (`COLLECT_LIST(DETAILS)`).
+aggregate events and commands (`COLLECT_LIST(JSON_DATA)`).
 
 When a command, or an event is consumed from `order-aggregates` topic, the message already contains
 all aggregate events.
