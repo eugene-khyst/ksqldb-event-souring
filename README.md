@@ -32,6 +32,9 @@ stores.
 
 This repository provides a sample of event sourced system that uses Kafka and ksqlDB as event store.
 
+![Kafka Logo](img/kafka-logo.png)
+![ksqlDB Logo](img/ksqlDB-logo.png)
+
 ## <a name="8753dff3c2879207fa06ef1844b1ea4d"></a>Example Domain
 
 The example domain is ride hailing.
