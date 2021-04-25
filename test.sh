@@ -8,7 +8,6 @@ sleep 1s
 
 echo "Get the placed order"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
-echo
 
 echo "Accept the order"
 echo "Try to cancel the order concurrently to simulate a write-write conflict"
@@ -18,7 +17,6 @@ sleep 1s
 
 echo "Get the accepted order with optimistic concurrency control error"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
-echo
 
 echo "Try to cancel an outdated version of the order to simulate lost update"
 curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":1}' -H 'Content-Type: application/json'
@@ -26,7 +24,6 @@ sleep 1s
 
 echo "Get the accepted order with optimistic concurrency control error"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
-echo
 
 echo "Try to cancel a version of the order 'from the future' to simulate unordering"
 curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":4}' -H 'Content-Type: application/json'
@@ -34,7 +31,6 @@ sleep 1s
 
 echo "Get the accepted order with optimistic concurrency control error"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
-echo
 
 echo "Complete the order"
 curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":4}' -H 'Content-Type: application/json'
@@ -42,7 +38,6 @@ sleep 1s
 
 echo "Get the completed order"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
-echo
 
 echo "Try to cancel a completed order to simulate business rule violation"
 curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":5}' -H 'Content-Type: application/json'
@@ -50,7 +45,6 @@ sleep 1s
 
 echo "Get the completed order with business rule validation error"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
-echo
 
 echo "Print integration events"
 docker-compose exec kafka /bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic order-integration-events --from-beginning --property print.key=true --timeout-ms 3000
