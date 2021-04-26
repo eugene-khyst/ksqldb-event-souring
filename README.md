@@ -482,7 +482,7 @@ The `test.sh` script has the following instructions:
     ```json
     {
       "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
-      "version": 3,
+      "version": 2,
       "status": "ACCEPTED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
       "price": 123.45,
@@ -517,7 +517,7 @@ The `test.sh` script has the following instructions:
     ```
 7. Try to cancel a version of the order 'from the future' to simulate unordering.
     ```bash
-    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":4}' -H 'Content-Type: application/json'
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":3}' -H 'Content-Type: application/json'
     sleep 1s
     ```
 8. Get the accepted order with optimistic concurrency control error.
@@ -527,7 +527,7 @@ The `test.sh` script has the following instructions:
     ```json
     {
       "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
-      "version": 4,
+      "version": 2,
       "status": "ACCEPTED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
       "price": 123.45,
@@ -559,15 +559,15 @@ The `test.sh` script has the following instructions:
         },
         {
           "command": "CancelOrderCommand",
-          "expectedVersion": 4,
-          "message": "Actual version 3 doesn't match expected version 4"
+          "expectedVersion": 3,
+          "message": "Actual version 2 doesn't match expected version 3"
         }
       ]
     }
     ```
 9. Complete the order.
     ```bash
-    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":4}' -H 'Content-Type: application/json'
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":2}' -H 'Content-Type: application/json'
     sleep 1s
     ```
 10. Get the completed order.
@@ -577,7 +577,7 @@ The `test.sh` script has the following instructions:
     ```json
     {
       "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
-      "version": 5,
+      "version": 3,
       "status": "COMPLETED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
       "price": 123.45,
@@ -610,15 +610,15 @@ The `test.sh` script has the following instructions:
         },
         {
           "command": "CancelOrderCommand",
-          "expectedVersion": 4,
-          "message": "Actual version 3 doesn't match expected version 4"
+          "expectedVersion": 3,
+          "message": "Actual version 2 doesn't match expected version 3"
         }
       ]
     }
     ```
 11. Try to cancel a completed order to simulate business rule violation.
     ```bash
-    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":5}' -H 'Content-Type: application/json'
+    curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":3}' -H 'Content-Type: application/json'
     sleep 1s
     ```
 12. Get the completed order with business rule validation error.
@@ -628,7 +628,7 @@ The `test.sh` script has the following instructions:
     ```json
     {
       "id": "827e3a63-d252-415f-af60-94c5a36bfcd6",
-      "version": 6,
+      "version": 3,
       "status": "COMPLETED",
       "riderId": "63770803-38f4-4594-aec2-4c74918f7165",
       "price": 123.45,
@@ -661,12 +661,12 @@ The `test.sh` script has the following instructions:
         },
         {
           "command": "CancelOrderCommand",
-          "expectedVersion": 4,
-          "message": "Actual version 3 doesn't match expected version 4"
+          "expectedVersion": 3,
+          "message": "Actual version 2 doesn't match expected version 3"
         },
         {
           "command": "CancelOrderCommand",
-          "expectedVersion": 5,
+          "expectedVersion": 3,
           "message": "Order in status COMPLETED can't be cancelled"
         }
       ]
@@ -679,5 +679,5 @@ The `test.sh` script has the following instructions:
     ```
     827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderPlacedEvent","event_timestamp":1619191582543,"version":1,"status":"PLACED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}]}
     827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderAcceptedEvent","event_timestamp":1619191583542,"version":2,"status":"ACCEPTED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
-    827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderCompletedEvent","event_timestamp":1619191586791,"version":5,"status":"COMPLETED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
+    827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderCompletedEvent","event_timestamp":1619191586791,"version":3,"status":"COMPLETED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
     ```

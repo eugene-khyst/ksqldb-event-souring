@@ -18,6 +18,7 @@ public abstract class Aggregate {
 
   protected UUID aggregateId;
   protected int baseVersion = 0;
+  protected int nextVersion = 1;
 
   protected final List<Event> changes = new ArrayList<>();
   protected final List<ErrorMessage> errors = new ArrayList<>();
@@ -37,16 +38,22 @@ public abstract class Aggregate {
     events.forEach(
         event -> {
           apply(event);
-          baseVersion = event.getVersion();
+          if (!(event instanceof ErrorEvent)) {
+            baseVersion = event.getVersion();
+            nextVersion = baseVersion + 1;
+          }
         });
   }
 
   protected void applyChange(Event event) {
-    if (event.getVersion() != getNextVersion()) {
-      throw new IllegalStateException(
-          String.format(
-              "Event version %s doesn't match expected version %s",
-              event.getVersion(), getNextVersion()));
+    if (!(event instanceof ErrorEvent)) {
+      if (event.getVersion() != getNextVersion()) {
+        throw new IllegalStateException(
+            String.format(
+                "Event version %s doesn't match expected version %s",
+                event.getVersion(), getNextVersion()));
+      }
+      nextVersion++;
     }
     apply(event);
     changes.add(event);
@@ -79,7 +86,6 @@ public abstract class Aggregate {
     applyChange(
         ErrorEvent.builder()
             .aggregateId(aggregateId)
-            .version(getNextVersion())
             .commandType(command.getCommandType())
             .expectedVersion(command.getExpectedVersion())
             .errorMessage(errorMessage)
@@ -89,9 +95,5 @@ public abstract class Aggregate {
   public void apply(ErrorEvent event) {
     log.info("Error '{}' in aggregate {}", event.getErrorMessage(), this);
     errors.add(ErrorMessage.from(event));
-  }
-
-  protected int getNextVersion() {
-    return baseVersion + changes.size() + 1;
   }
 }

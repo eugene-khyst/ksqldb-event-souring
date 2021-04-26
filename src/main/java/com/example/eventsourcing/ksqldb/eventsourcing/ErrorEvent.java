@@ -1,6 +1,5 @@
 package com.example.eventsourcing.ksqldb.eventsourcing;
 
-import java.time.Instant;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
@@ -20,13 +19,8 @@ public class ErrorEvent extends Event {
 
   @Builder
   public ErrorEvent(
-      UUID aggregateId,
-      int version,
-      Instant createdDate,
-      String commandType,
-      int expectedVersion,
-      String errorMessage) {
-    super(aggregateId, version);
+      UUID aggregateId, String commandType, int expectedVersion, String errorMessage) {
+    super(aggregateId, 0);
     this.commandType = commandType;
     this.expectedVersion = expectedVersion;
     this.errorMessage = errorMessage;

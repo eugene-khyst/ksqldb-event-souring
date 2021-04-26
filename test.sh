@@ -26,21 +26,21 @@ echo "Get the accepted order with optimistic concurrency control error"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
 
 echo "Try to cancel a version of the order 'from the future' to simulate unordering"
-curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":4}' -H 'Content-Type: application/json'
+curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":3}' -H 'Content-Type: application/json'
 sleep 1s
 
 echo "Get the accepted order with optimistic concurrency control error"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
 
 echo "Complete the order"
-curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":4}' -H 'Content-Type: application/json'
+curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"COMPLETED","version":2}' -H 'Content-Type: application/json'
 sleep 1s
 
 echo "Get the completed order"
 curl -s -X GET http://localhost:8080/orders/$ORDER_ID | jq
 
 echo "Try to cancel a completed order to simulate business rule violation"
-curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":5}' -H 'Content-Type: application/json'
+curl -s -X PATCH http://localhost:8080/orders/$ORDER_ID -d '{"status":"CANCELLED","version":3}' -H 'Content-Type: application/json'
 sleep 1s
 
 echo "Get the completed order with business rule validation error"
