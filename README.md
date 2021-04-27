@@ -6,7 +6,8 @@
     * [State-Oriented Persistence](#436b314e78fec59a76bad8b93b52ee75)
     * [Event Sourcing](#c4b3d1c8edab1825366ac1d541d8226f)
     * [CQRS](#b2cf9293622451d86574d2973398ca70)
-    * [Advantages of Event Sourcing and CQRS](#d8818c2c5ba0364540a49273f684b85c)
+    * [Advantages of CQRS](#cc00871be6276415cfb13eb24e97fe48)
+    * [Advantages of Event Sourcing](#845b7e034fb763fcdf57e9467c0a8707)
 * [Requirements for Event Store](#70b356f41293ace9df0d04cd8175ac35)
 * [Solution Architecture](#9f6302143996033ebb94d536b860acc3)
     * [Kafka Topic Architecture](#7a5c6b7581644459b2452045e4b3584d)
@@ -48,6 +49,10 @@ The example domain is ride hailing.
 * A driver can accept and complete an order.
 * An order can be cancelled before completion.
 
+![Domain use case diagram](img/domain-1.png)
+
+![Domain state diagram](img/domain-2.png)
+
 ## <a name="19025f75ca30ec4a46f55a6b9afdeba6"></a>Event Sourcing and CQRS 101
 
 ### <a name="436b314e78fec59a76bad8b93b52ee75"></a>State-Oriented Persistence
@@ -66,7 +71,25 @@ Whenever the state of an entity changes, a new event is appended to the list of 
 
 Current state of an entity can be restored by replaying all its events.
 
+Event sourcing is best suited for short-living entities with relatively small total number of
+event (like orders).
+
+Restoring the state of the short-living entity by replaying all its events doesn't have any
+performance impact. Thus, no optimizations for restoring state are required for short-living
+entities.
+
+For endlessly stored entities (like users or bank accounts) with thousands of events restoring state
+by replaying all events is not optimal and snapshotting should be considered.
+
+Snapshotting is an optimization technique where a snapshot of the aggregate's state is also saved,
+so an application can restore the current state of an aggregate from the snapshot instead of from
+scratch.
+
+![Snapshotting in event souring](img/event-sourcing-snapshotting.png)
+
 An entity in event sourcing is also referenced as an aggregate.
+
+A sequence of events for the same aggregate are also referenced as a stream.
 
 ### <a name="b2cf9293622451d86574d2973398ca70"></a>CQRS
 
@@ -78,7 +101,10 @@ A command generates zero or more events or results in an error.
 
 ![CQRS](img/cqrs-1.png)
 
-Event sourcing is usually used in conjunction with CQRS.
+CQRS is a self-sufficient architectural pattern and doesn't require event sourcing.
+
+Event sourcing is usually used in conjunction with CQRS. Event store is used as a write database and
+SQL or NoSQL database as a read database.
 
 ![CQRS](img/cqrs-2.png)
 
@@ -87,16 +113,18 @@ integration with other bounded contexts. Integration events representing the cur
 aggregate should be used for communication between bounded contexts instead of a raw event sourcing
 change events.
 
-### <a name="d8818c2c5ba0364540a49273f684b85c"></a>Advantages of Event Sourcing and CQRS
+### <a name="cc00871be6276415cfb13eb24e97fe48"></a>Advantages of CQRS
+
+* Independent scaling of the read and write databases.
+* Optimized data schema for the read database (e.g. the read databases can be denormalized).
+* Simpler queries (e.g. complex `JOIN` operations can be avoided).
+
+### <a name="845b7e034fb763fcdf57e9467c0a8707"></a>Advantages of Event Sourcing
 
 * Having a true history of the system (audit and traceability).
 * Ability to put the system in any prior state (e.g. for debugging).
 * Read-side projections can be created as needed (later) from events. It allows responding to future
   needs and new requirements.
-* Independent scaling. CQRS allows We can scale the read and write databases independently of each
-  other.
-* Optimized data schema for read database (e.g. the read databases can be denormalized).
-* Simpler queries (e.g. complex `JOIN` operations can be avoided).
 
 ## <a name="70b356f41293ace9df0d04cd8175ac35"></a>Requirements for Event Store
 
@@ -334,9 +362,6 @@ messages from where it left off in the offset after a restart.
 4. A command must generate one or more events (and never zero events). Otherwise, optimistic
    concurrency check implementation will work incorrectly.
 5. Adding event sourcing snapshotting is possible but will complicate the solution even more.
-   Snapshotting is an optimization technique where a snapshot of the aggregate's state is also
-   saved, so an application can restore the current state of an aggregate from the snapshot instead
-   of from scratch.
 
 ## <a name="56a081f86b7ec6a7d523c7e6d186f1a3"></a>Why ksqlDB?
 
@@ -681,3 +706,5 @@ The `test.sh` script has the following instructions:
     827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderAcceptedEvent","event_timestamp":1619191583542,"version":2,"status":"ACCEPTED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
     827e3a63-d252-415f-af60-94c5a36bfcd6	{"order_id":"827e3a63-d252-415f-af60-94c5a36bfcd6","event_type":"OrderCompletedEvent","event_timestamp":1619191586791,"version":3,"status":"COMPLETED","rider_id":"63770803-38f4-4594-aec2-4c74918f7165","price":123.45,"route":[{"ADDRESS":"Київ, вулиця Полярна, 17А","LAT":50.51980052414157,"LON":30.467197278948536},{"ADDRESS":"Київ, вулиця Новокостянтинівська, 18В","LAT":50.48509161169076,"LON":30.485170724431292}],"driver_id":"2c068a1a-9263-433f-a70b-067d51b98378"}
     ```
+
+
